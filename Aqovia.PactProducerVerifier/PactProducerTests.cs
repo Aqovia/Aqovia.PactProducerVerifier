@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -12,7 +11,6 @@ using PactNet;
 using PactNet.Infrastructure.Outputters;
 using RestSharp;
 using RestSharp.Authenticators;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Aqovia.PactProducerVerifier
@@ -75,7 +73,6 @@ namespace Aqovia.PactProducerVerifier
             _method = type.GetMethod("Configuration");
         }
 
-        [Fact]
         public virtual void EnsureApiHonoursPactWithConsumers()
         {
             using (WebApp.Start(_serviceUri.AbsoluteUri, builder => _method.Invoke(_startup, new List<object> { builder }.ToArray())))
