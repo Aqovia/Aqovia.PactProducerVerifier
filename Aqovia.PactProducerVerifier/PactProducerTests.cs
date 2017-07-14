@@ -12,6 +12,7 @@ using PactNet.Infrastructure.Outputters;
 using RestSharp;
 using RestSharp.Authenticators;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Aqovia.PactProducerVerifier
 {
@@ -30,12 +31,18 @@ namespace Aqovia.PactProducerVerifier
         private readonly string _gitBranchName;
         private readonly int _maxBranchNameLength;
 
-        public PactProducerTests(ITestOutputHelper output, Uri serviceUri, string gitBranchName, int maxBranchNameLength = Int32.MaxValue)
+        public PactProducerTests(ITestOutputHelper output, Uri serviceUri, string gitBranchName, int maxBranchNameLength = Int32.MaxValue, string fakeModeConfigSetting = null)
         {
             _output = new XUnitOutput(output);
             _serviceUri = serviceUri;
             _gitBranchName = gitBranchName;
             _maxBranchNameLength = maxBranchNameLength;
+
+            if (fakeModeConfigSetting != null &&
+                !bool.Parse(ConfigurationManager.AppSettings[fakeModeConfigSetting]))
+            {
+                throw new ArgumentException($"Fake mode setting: {fakeModeConfigSetting} is false");
+            }
 
             if (ProducerServiceName == null)
             {
@@ -85,6 +92,7 @@ namespace Aqovia.PactProducerVerifier
                     var pact = PactBrokerRestClient.Execute(new RestRequest(pactUrl));
                     if (pact.StatusCode != HttpStatusCode.OK)
                     {
+                        _output.WriteLine($"Pact does not exist for branch: {currentBranchName}, using {MasterBranchName} instead");
                         pactUrl = GetPactUrl(consumer, MasterBranchName);
                         pact = PactBrokerRestClient.Execute(new RestRequest(pactUrl));
                         if (pact.StatusCode != HttpStatusCode.OK)
@@ -127,11 +135,21 @@ namespace Aqovia.PactProducerVerifier
         protected string GetCurrentBranchName()
         {
             var componentBranch = Environment.GetEnvironmentVariable("ComponentBranch");
-            var branchName = componentBranch == string.Empty ? MasterBranchName : componentBranch;
-            branchName = branchName?.TrimStart('-') ?? _gitBranchName ?? MasterBranchName;
-            return branchName.Length > _maxBranchNameLength
-                ? branchName.Substring(0, _maxBranchNameLength)
+
+            _output.WriteLine($"GitBranchName = {_gitBranchName}");
+            _output.WriteLine($"Environment Variable 'ComponentBranch' = {componentBranch}");
+            
+            var branchName = _gitBranchName;
+            branchName = string.IsNullOrEmpty(branchName) ? componentBranch : branchName;
+            branchName = string.IsNullOrEmpty(branchName) ? MasterBranchName : branchName;
+
+            branchName = branchName?.TrimStart('-')?.Length > _maxBranchNameLength ? 
+                 branchName.Substring(0, _maxBranchNameLength)
                 : branchName;
+
+            _output.WriteLine($"Calculated BranchName = {branchName}");
+
+            return branchName;
         }
 
         protected void VerifyPactWithConsumer(JToken consumer, string pactUrl, string serviceUri)
