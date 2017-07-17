@@ -18,9 +18,8 @@ namespace Aqovia.PactProducerVerifier
 {
     public class PactProducerTests
     {
-        protected static readonly string MasterBranchName = "master";
-        protected ConfigurationSettings ConfigurationSettings;
-        protected RestClient PactBrokerRestClient;
+        private static readonly string MasterBranchName = "master";
+        private readonly RestClient PactBrokerRestClient;
         private readonly object _startup;
         private readonly MethodInfo _method;
         private const string TeamcityprojectnameAppSettingKey = "TeamCityProjectName";
@@ -80,7 +79,7 @@ namespace Aqovia.PactProducerVerifier
             _method = type.GetMethod("Configuration");
         }
 
-        public virtual void EnsureApiHonoursPactWithConsumers()
+        public void EnsureApiHonoursPactWithConsumers()
         {
             using (WebApp.Start(_serviceUri.AbsoluteUri, builder => _method.Invoke(_startup, new List<object> { builder }.ToArray())))
             {
@@ -103,12 +102,12 @@ namespace Aqovia.PactProducerVerifier
             }
         }
 
-        protected string GetPactUrl(JToken consumer, string branchName)
+        private string GetPactUrl(JToken consumer, string branchName)
         {
             return $"pacts/provider/{ProducerServiceName}/consumer/{consumer}/latest/{branchName}";
         }
 
-        protected IEnumerable<JToken> GetConsumers(IRestClient client)
+        private IEnumerable<JToken> GetConsumers(IRestClient client)
         {
             IEnumerable<JToken> consumers = new List<JToken>();
             var restRequest = new RestRequest($"pacts/provider/{ProducerServiceName}/latest");
@@ -123,7 +122,7 @@ namespace Aqovia.PactProducerVerifier
             return consumers;
         }
 
-        protected RestClient SetupRestClient()
+        private RestClient SetupRestClient()
         {
             var client = new RestClient
             {
@@ -132,7 +131,7 @@ namespace Aqovia.PactProducerVerifier
             };
             return client;
         }
-        protected string GetCurrentBranchName()
+        private string GetCurrentBranchName()
         {
             var componentBranch = Environment.GetEnvironmentVariable("ComponentBranch");
 
@@ -152,7 +151,7 @@ namespace Aqovia.PactProducerVerifier
             return branchName;
         }
 
-        protected void VerifyPactWithConsumer(JToken consumer, string pactUrl, string serviceUri)
+        private void VerifyPactWithConsumer(JToken consumer, string pactUrl, string serviceUri)
         {
             //we need to instantiate one pact verifier for each consumer
 
@@ -176,20 +175,21 @@ namespace Aqovia.PactProducerVerifier
             serviceProvider.PactUri(pactUri.AbsoluteUri, pactUriOptions);
             serviceProvider.Verify();
         }
+        private class XUnitOutput : IOutput
+        {
+            private readonly ITestOutputHelper _output;
+
+            public XUnitOutput(ITestOutputHelper output)
+            {
+                _output = output;
+            }
+
+            public void WriteLine(string line)
+            {
+                _output.WriteLine(line);
+            }
+        }
     }
 
-    public class XUnitOutput : IOutput
-    {
-        private readonly ITestOutputHelper _output;
 
-        public XUnitOutput(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
-        public void WriteLine(string line)
-        {
-            _output.WriteLine(line);
-        }
-    }
 }
