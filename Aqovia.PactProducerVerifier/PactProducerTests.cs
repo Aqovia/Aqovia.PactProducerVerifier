@@ -164,16 +164,16 @@ namespace Aqovia.PactProducerVerifier
                 }
             };
 
-            var pactVerifierOrderService = new PactVerifier(config);
-            var serviceProvider = pactVerifierOrderService.ServiceProvider(ProducerServiceName, serviceUri);
+            var pactVerifier = new PactVerifier(config);
+            var serviceProvider = pactVerifier.ServiceProvider(ProducerServiceName, serviceUri);
             serviceProvider.HonoursPactWith(consumer.ToString());
-            var pactUriOrderService = new Uri(new Uri(ConfigurationManager.AppSettings["PactBrokerUri"]), pactUrl);
+            var pactUri = new Uri(new Uri(ConfigurationManager.AppSettings["PactBrokerUri"]), pactUrl);
 
             PactUriOptions pactUriOptions = null;
             if (!string.IsNullOrEmpty(ConfigurationManager.AppSettings["PactBrokerUsername"]))
                 pactUriOptions = new PactUriOptions(ConfigurationManager.AppSettings["PactBrokerUsername"], ConfigurationManager.AppSettings["PactBrokerPassword"]);
 
-            serviceProvider.PactUri(pactUriOrderService.AbsoluteUri, pactUriOptions);
+            serviceProvider.PactUri(pactUri.AbsoluteUri, pactUriOptions);
             serviceProvider.Verify();
         }
     }
