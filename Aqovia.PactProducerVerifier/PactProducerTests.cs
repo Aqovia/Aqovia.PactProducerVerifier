@@ -34,18 +34,12 @@ namespace Aqovia.PactProducerVerifier
         private static string PactBrokerPassword => ConfigurationManager.AppSettings["PactBrokerPassword"];
         private static string PactBrokerUri => ConfigurationManager.AppSettings[PactBrokerUriAppSettingKey];
         
-        public PactProducerTests(Action<string> output, Uri serviceUri, string gitBranchName, int maxBranchNameLength = Int32.MaxValue, string fakeModeConfigSetting = null)
+        public PactProducerTests(Action<string> output, Uri serviceUri, string gitBranchName, int maxBranchNameLength = Int32.MaxValue)
         {
             _output = new ActionOutput(output);
             _serviceUri = serviceUri;
             _gitBranchName = gitBranchName;
             _maxBranchNameLength = maxBranchNameLength;
-
-            if (fakeModeConfigSetting != null &&
-                !bool.Parse(ConfigurationManager.AppSettings[fakeModeConfigSetting]))
-            {
-                throw new ArgumentException($"Fake mode setting: {fakeModeConfigSetting} is false");
-            }
 
             if (string.IsNullOrEmpty(ProducerServiceName))
             {
