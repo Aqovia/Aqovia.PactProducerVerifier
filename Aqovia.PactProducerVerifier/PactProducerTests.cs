@@ -19,12 +19,12 @@ namespace Aqovia.PactProducerVerifier
         private const string MasterBranchName = "master";
         private const string TeamCityProjectNameAppSettingKey = "TeamCityProjectName";
         private const string PactBrokerUriAppSettingKey = "PactBrokerUri";
+        private const string BaseServiceUri = "http://localhost";
 
         private readonly RestClient _pactBrokerRestClient;
         private readonly object _startup;
         private readonly MethodInfo _method;
         private readonly ActionOutput _output;
-        private readonly Uri _serviceUri;
         private readonly string _gitBranchName;
         private readonly int _maxBranchNameLength;
 
@@ -34,10 +34,9 @@ namespace Aqovia.PactProducerVerifier
         private static string PactBrokerPassword => ConfigurationManager.AppSettings["PactBrokerPassword"];
         private static string PactBrokerUri => ConfigurationManager.AppSettings[PactBrokerUriAppSettingKey];
         
-        public PactProducerTests(Action<string> output, Uri serviceUri, string gitBranchName, int maxBranchNameLength = Int32.MaxValue)
+        public PactProducerTests(Action<string> output, string gitBranchName, int maxBranchNameLength = Int32.MaxValue)
         {
             _output = new ActionOutput(output);
-            _serviceUri = serviceUri;
             _gitBranchName = gitBranchName;
             _maxBranchNameLength = maxBranchNameLength;
 
@@ -84,7 +83,29 @@ namespace Aqovia.PactProducerVerifier
 
         public void EnsureApiHonoursPactWithConsumers()
         {
-            using (WebApp.Start(_serviceUri.AbsoluteUri, builder => _method.Invoke(_startup, new List<object> { builder }.ToArray())))
+            const int maxRetries = 5;
+            var random = new Random();
+            var uriBuilder = new UriBuilder(BaseServiceUri);
+            for (var i = 0; i < maxRetries; i++)
+            {
+                try
+                {
+                    uriBuilder.Port = random.Next(10000, 20000);
+                    EnsureApiHonoursPactWithConsumers(uriBuilder.Uri);
+                    break;
+                }
+                catch (HttpListenerException ex)
+                {
+                    _output.WriteLine($"Service Uri: {uriBuilder.Uri.AbsoluteUri} failed with: {ex.Message}");
+                    if(i < maxRetries)
+                        _output.WriteLine($"will retry ...");
+                }
+            }
+        }
+
+        private void EnsureApiHonoursPactWithConsumers(Uri uri)
+        {
+            using (WebApp.Start(uri.AbsoluteUri, builder => _method.Invoke(_startup, new List<object> { builder }.ToArray())))
             {
                 var consumers = GetConsumers(_pactBrokerRestClient);
                 var currentBranchName = GetCurrentBranchName();
@@ -100,7 +121,7 @@ namespace Aqovia.PactProducerVerifier
                         if (pact.StatusCode != HttpStatusCode.OK)
                             continue;
                     }
-                    VerifyPactWithConsumer(consumer, pactUrl, _serviceUri.AbsoluteUri);
+                    VerifyPactWithConsumer(consumer, pactUrl, uri.AbsoluteUri);
                 }
             }
         }
