@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration xmlns:xdt="http://schemas.microsoft.com/XML-Document-Transform">
+    <appSettings>
+      <add key="PactBrokerUri" value="" xdt:Transform="InsertIfMissing"/>
+      <add key="PactBrokerUsername" value="" xdt:Transform="InsertIfMissing"/>
+      <add key="PactBrokerPassword" value="" xdt:Transform="InsertIfMissing"/>
+      <add key="TeamCityProjectName" value="" xdt:Transform="InsertIfMissing"/>
+    </appSettings>
+</configuration>

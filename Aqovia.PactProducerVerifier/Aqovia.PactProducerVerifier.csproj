@@ -75,6 +75,8 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Aqovia.PactProducerVerifier.nuspec" />
+    <None Include="content\app.config.uninstall.xdt" />
+    <None Include="content\app.config.install.xdt" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

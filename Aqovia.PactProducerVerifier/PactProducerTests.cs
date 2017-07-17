@@ -18,18 +18,24 @@ namespace Aqovia.PactProducerVerifier
 {
     public class PactProducerTests
     {
-        private static readonly string MasterBranchName = "master";
-        private readonly RestClient PactBrokerRestClient;
+        private const string MasterBranchName = "master";
+        private const string TeamCityProjectNameAppSettingKey = "TeamCityProjectName";
+        private const string PactBrokerUriAppSettingKey = "PactBrokerUri";
+
+        private readonly RestClient _pactBrokerRestClient;
         private readonly object _startup;
         private readonly MethodInfo _method;
-        private const string TeamcityprojectnameAppSettingKey = "TeamCityProjectName";
-        private static string ProducerServiceName => ConfigurationManager.AppSettings[TeamcityprojectnameAppSettingKey];
-        private static string ProjectName => ConfigurationManager.AppSettings["WebProjectName"];
         private readonly XUnitOutput _output;
         private readonly Uri _serviceUri;
         private readonly string _gitBranchName;
         private readonly int _maxBranchNameLength;
 
+        private static string ProducerServiceName => ConfigurationManager.AppSettings[TeamCityProjectNameAppSettingKey];
+        private static string ProjectName => ConfigurationManager.AppSettings["WebProjectName"];
+        private static string PactBrokerUsername => ConfigurationManager.AppSettings["PactBrokerUsername"];
+        private static string PactBrokerPassword => ConfigurationManager.AppSettings["PactBrokerPassword"];
+        private static string PactBrokerUri => ConfigurationManager.AppSettings[PactBrokerUriAppSettingKey];
+        
         public PactProducerTests(ITestOutputHelper output, Uri serviceUri, string gitBranchName, int maxBranchNameLength = Int32.MaxValue, string fakeModeConfigSetting = null)
         {
             _output = new XUnitOutput(output);
@@ -43,12 +49,17 @@ namespace Aqovia.PactProducerVerifier
                 throw new ArgumentException($"Fake mode setting: {fakeModeConfigSetting} is false");
             }
 
-            if (ProducerServiceName == null)
+            if (string.IsNullOrEmpty(ProducerServiceName))
             {
-                throw new ArgumentException($"App setting '{TeamcityprojectnameAppSettingKey}' is missing");
+                throw new ArgumentException($"App setting '{TeamCityProjectNameAppSettingKey}' is missing or not set");
             }
 
-            PactBrokerRestClient = SetupRestClient();
+            if (string.IsNullOrEmpty(PactBrokerUri))
+            {
+                throw new ArgumentException($"App setting '{PactBrokerUriAppSettingKey}' is missing or not set");
+            }
+
+            _pactBrokerRestClient = SetupRestClient();
             var path = AppDomain.CurrentDomain.BaseDirectory;
 
             Assembly webAssembly;
@@ -83,17 +94,17 @@ namespace Aqovia.PactProducerVerifier
         {
             using (WebApp.Start(_serviceUri.AbsoluteUri, builder => _method.Invoke(_startup, new List<object> { builder }.ToArray())))
             {
-                var consumers = GetConsumers(PactBrokerRestClient);
+                var consumers = GetConsumers(_pactBrokerRestClient);
                 var currentBranchName = GetCurrentBranchName();
                 foreach (var consumer in consumers)
                 {
                     var pactUrl = GetPactUrl(consumer, currentBranchName);
-                    var pact = PactBrokerRestClient.Execute(new RestRequest(pactUrl));
+                    var pact = _pactBrokerRestClient.Execute(new RestRequest(pactUrl));
                     if (pact.StatusCode != HttpStatusCode.OK)
                     {
                         _output.WriteLine($"Pact does not exist for branch: {currentBranchName}, using {MasterBranchName} instead");
                         pactUrl = GetPactUrl(consumer, MasterBranchName);
-                        pact = PactBrokerRestClient.Execute(new RestRequest(pactUrl));
+                        pact = _pactBrokerRestClient.Execute(new RestRequest(pactUrl));
                         if (pact.StatusCode != HttpStatusCode.OK)
                             continue;
                     }
@@ -126,8 +137,8 @@ namespace Aqovia.PactProducerVerifier
         {
             var client = new RestClient
             {
-                Authenticator = new HttpBasicAuthenticator(ConfigurationManager.AppSettings["PactBrokerUsername"], ConfigurationManager.AppSettings["PactBrokerPassword"]),
-                BaseUrl = new Uri(ConfigurationManager.AppSettings["PactBrokerUri"]),
+                Authenticator = new HttpBasicAuthenticator(PactBrokerUsername, PactBrokerPassword),
+                BaseUrl = new Uri(PactBrokerUri),
             };
             return client;
         }
@@ -166,11 +177,11 @@ namespace Aqovia.PactProducerVerifier
             var pactVerifier = new PactVerifier(config);
             var serviceProvider = pactVerifier.ServiceProvider(ProducerServiceName, serviceUri);
             serviceProvider.HonoursPactWith(consumer.ToString());
-            var pactUri = new Uri(new Uri(ConfigurationManager.AppSettings["PactBrokerUri"]), pactUrl);
+            var pactUri = new Uri(new Uri(PactBrokerUri), pactUrl);
 
             PactUriOptions pactUriOptions = null;
-            if (!string.IsNullOrEmpty(ConfigurationManager.AppSettings["PactBrokerUsername"]))
-                pactUriOptions = new PactUriOptions(ConfigurationManager.AppSettings["PactBrokerUsername"], ConfigurationManager.AppSettings["PactBrokerPassword"]);
+            if (!string.IsNullOrEmpty(PactBrokerUsername))
+                pactUriOptions = new PactUriOptions(PactBrokerUsername, PactBrokerPassword);
 
             serviceProvider.PactUri(pactUri.AbsoluteUri, pactUriOptions);
             serviceProvider.Verify();
