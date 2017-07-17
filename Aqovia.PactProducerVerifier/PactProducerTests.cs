@@ -11,8 +11,6 @@ using PactNet;
 using PactNet.Infrastructure.Outputters;
 using RestSharp;
 using RestSharp.Authenticators;
-using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Aqovia.PactProducerVerifier
 {
@@ -25,7 +23,7 @@ namespace Aqovia.PactProducerVerifier
         private readonly RestClient _pactBrokerRestClient;
         private readonly object _startup;
         private readonly MethodInfo _method;
-        private readonly XUnitOutput _output;
+        private readonly ActionOutput _output;
         private readonly Uri _serviceUri;
         private readonly string _gitBranchName;
         private readonly int _maxBranchNameLength;
@@ -36,9 +34,9 @@ namespace Aqovia.PactProducerVerifier
         private static string PactBrokerPassword => ConfigurationManager.AppSettings["PactBrokerPassword"];
         private static string PactBrokerUri => ConfigurationManager.AppSettings[PactBrokerUriAppSettingKey];
         
-        public PactProducerTests(ITestOutputHelper output, Uri serviceUri, string gitBranchName, int maxBranchNameLength = Int32.MaxValue, string fakeModeConfigSetting = null)
+        public PactProducerTests(Action<string> output, Uri serviceUri, string gitBranchName, int maxBranchNameLength = Int32.MaxValue, string fakeModeConfigSetting = null)
         {
-            _output = new XUnitOutput(output);
+            _output = new ActionOutput(output);
             _serviceUri = serviceUri;
             _gitBranchName = gitBranchName;
             _maxBranchNameLength = maxBranchNameLength;
@@ -186,18 +184,18 @@ namespace Aqovia.PactProducerVerifier
             serviceProvider.PactUri(pactUri.AbsoluteUri, pactUriOptions);
             serviceProvider.Verify();
         }
-        private class XUnitOutput : IOutput
+        private class ActionOutput : IOutput
         {
-            private readonly ITestOutputHelper _output;
+            private readonly Action<string> _output;
 
-            public XUnitOutput(ITestOutputHelper output)
+            public ActionOutput(Action<string> output)
             {
                 _output = output;
             }
 
             public void WriteLine(string line)
             {
-                _output.WriteLine(line);
+                _output.Invoke(line);
             }
         }
     }
