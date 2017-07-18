@@ -56,5 +56,7 @@ The PactProducerTests constructor takes in 3 parameters:
 * The maximum branch name length (optional)
 
 ## Sample
-A sample is included in the source - in the samples folder. Update the PactBrokerUri configuration setting to the uri of the broker your using.
+A sample is included in the source - in the samples folder. To use this:
+* Update the PactBrokerUri configuration setting to the uri of the broker your using.
+* Remove the Skip parameter in the [Fact] attribute
 

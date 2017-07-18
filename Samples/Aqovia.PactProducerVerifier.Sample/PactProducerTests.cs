@@ -13,7 +13,7 @@ namespace Aqovia.PactProducerVerifier.Sample
             _pactProducerTests = new Aqovia.PactProducerVerifier.PactProducerTests(output.WriteLine, ThisAssembly.Git.Branch, TeamCityMaxBranchLength);
         }
 
-        [Fact]
+        [Fact (Skip = "Update PactBrokerUri configuration setting first")]
         public void EnsureApiHonoursPactWithConsumers()
         {
             _pactProducerTests.EnsureApiHonoursPactWithConsumers();
