@@ -5,6 +5,12 @@ VisualStudioVersion = 15.0.26430.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.PactProducerVerifier", "Aqovia.PactProducerVerifier\Aqovia.PactProducerVerifier.csproj", "{394DF45B-D0E7-4406-AF87-D70AB7D22072}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{4471AC74-E078-4B6D-9157-9D68B996F618}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.PactProducerVerifier.Sample", "Samples\Aqovia.PactProducerVerifier.Sample\Aqovia.PactProducerVerifier.Sample.csproj", "{3DF8A239-40A5-4C24-84D2-EBF7553D0CF6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aqovia.PactProducerVerifier.Api", "Samples\Aqovia.PactProducerVerifier.Api\Aqovia.PactProducerVerifier.Api.csproj", "{48590C6F-C1B2-440A-8E56-C7FC4FDAEF58}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,8 +21,20 @@ Global
 		{394DF45B-D0E7-4406-AF87-D70AB7D22072}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{394DF45B-D0E7-4406-AF87-D70AB7D22072}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{394DF45B-D0E7-4406-AF87-D70AB7D22072}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DF8A239-40A5-4C24-84D2-EBF7553D0CF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DF8A239-40A5-4C24-84D2-EBF7553D0CF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DF8A239-40A5-4C24-84D2-EBF7553D0CF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DF8A239-40A5-4C24-84D2-EBF7553D0CF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48590C6F-C1B2-440A-8E56-C7FC4FDAEF58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48590C6F-C1B2-440A-8E56-C7FC4FDAEF58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48590C6F-C1B2-440A-8E56-C7FC4FDAEF58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48590C6F-C1B2-440A-8E56-C7FC4FDAEF58}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3DF8A239-40A5-4C24-84D2-EBF7553D0CF6} = {4471AC74-E078-4B6D-9157-9D68B996F618}
+		{48590C6F-C1B2-440A-8E56-C7FC4FDAEF58} = {4471AC74-E078-4B6D-9157-9D68B996F618}
 	EndGlobalSection
 EndGlobal
