@@ -18,6 +18,7 @@ This uses the beta version of PactNet, and Team City.
 * Install the latest beta version 2.0.X-beta of PactNet package (use allow Pre-release option)
 * Install this package Aqovia.PactProducerVerifier
 * Install a test framework such as XUnit
+* Install GitInfo if you require to work out the git branch name locally 
 * Add the following configuration to your app.config file
 ```
   <appSettings>
@@ -26,6 +27,10 @@ This uses the beta version of PactNet, and Team City.
     <add key="PactBrokerPassword" value="<YOUR PACT BROKER PASSWORD OR BLANK>" />
     <add key="TeamCityProjectName" value="<YOUR NAME OF THE PROJECT (PRODUCER)" />
   </appSettings>
+```
+* If your web api project your testing doesn't end in Web.dll, add the configuration setting:
+```
+    <add key="WebProjectName" value="<YOUR WEB API PROJECT NAME" />
 ```
 * Add the test (example using XUnit)
 ```
@@ -49,3 +54,7 @@ The PactProducerTests constructor takes in 3 parameters:
 * An Action<string> - this is used so the output of the pact test is outputted to the test results (in XUnit in this example)
 * The branch this code is in. This is used locally, but if running on the build server it uses the environment variable "ComponentBranch"
 * The maximum branch name length (optional)
+
+## Sample
+A sample is included in the source - in the samples folder. Update the PactBrokerUri configuration setting to the uri of the broker your using.
+
