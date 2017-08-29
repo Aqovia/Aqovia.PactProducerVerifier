@@ -166,9 +166,9 @@ namespace Aqovia.PactProducerVerifier
             branchName = string.IsNullOrEmpty(componentBranch) ? branchName : componentBranch;
             branchName = string.IsNullOrEmpty(branchName) ? MasterBranchName : branchName;
 
-            branchName = branchName?.TrimStart('-')?.Length > _maxBranchNameLength ? 
-                 branchName.Substring(0, _maxBranchNameLength)
-                : branchName;
+            branchName = branchName?.TrimStart('-').Length > _maxBranchNameLength ? 
+                 branchName.TrimStart('-').Substring(0, _maxBranchNameLength)
+                : branchName.TrimStart('-');
 
             _output.WriteLine($"Calculated BranchName = {branchName}");
 
