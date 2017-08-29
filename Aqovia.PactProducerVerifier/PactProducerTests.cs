@@ -163,7 +163,7 @@ namespace Aqovia.PactProducerVerifier
             _output.WriteLine($"Environment Variable 'ComponentBranch' = {componentBranch}");
             
             var branchName = _gitBranchName;
-            branchName = string.IsNullOrEmpty(branchName) ? componentBranch : branchName;
+            branchName = string.IsNullOrEmpty(componentBranch) ? branchName : componentBranch;
             branchName = string.IsNullOrEmpty(branchName) ? MasterBranchName : branchName;
 
             branchName = branchName?.TrimStart('-')?.Length > _maxBranchNameLength ? 
