@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Aqovia.PactProducerVerifier</id>
-    <version>1.0.5</version>
+    <version>$version$</version>
     <title>Aqovia.PactProducerVerifier</title>
     <authors>Aqovia</authors>
     <owners>Aqovia</owners>
