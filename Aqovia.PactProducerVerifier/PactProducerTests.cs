@@ -188,6 +188,7 @@ namespace Aqovia.PactProducerVerifier
             };
 
             var pactVerifier = new PactVerifier(config);
+            pactVerifier.ProviderState($"{serviceUri}/provider-states");
             var serviceProvider = pactVerifier.ServiceProvider(ProducerServiceName, serviceUri);
             serviceProvider.HonoursPactWith(consumer.ToString());
             var pactUri = new Uri(new Uri(PactBrokerUri), pactUrl);
