@@ -101,7 +101,7 @@ namespace Aqovia.PactProducerVerifier
                 {
                     _output.WriteLine($"Service Uri: {uriBuilder.Uri.AbsoluteUri} failed with: {ex.Message}");
                     if(i < maxRetries)
-                        _output.WriteLine($"will retry ...");
+                        _output.WriteLine("will retry ...");
                 }
             }
         }

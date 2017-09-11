@@ -12,7 +12,6 @@ namespace Aqovia.PactProducerVerifier
 {
     public abstract class BaseProviderStateMiddleware
     {
-        protected abstract string ConsumerName { get; }
         private readonly Func<IDictionary<string, object>, Task> _mNext;
         protected abstract IDictionary<string, Action> ProviderStates { get; }
 
@@ -41,7 +40,7 @@ namespace Aqovia.PactProducerVerifier
                     var providerState = JsonConvert.DeserializeObject<ProviderState>(jsonRequestBody);
 
                     //A null or empty provider state key must be handled
-                    if (!string.IsNullOrEmpty(providerState?.State) && providerState.Consumer == ConsumerName)
+                    if (!string.IsNullOrEmpty(providerState?.State))
                     {
                         ProviderStates[providerState.State].Invoke();
                     }
