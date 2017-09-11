@@ -57,7 +57,7 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ProviderStateMiddleware.cs" />
+    <Compile Include="BaseProviderStateMiddleware.cs" />
     <Compile Include="PactProducerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

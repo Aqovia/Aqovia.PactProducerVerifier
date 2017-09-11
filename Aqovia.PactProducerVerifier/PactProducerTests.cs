@@ -17,8 +17,6 @@ namespace Aqovia.PactProducerVerifier
 {
     public class PactProducerTests
     {
-        public event EventHandler<IAppBuilder> WebAppStarted; 
-
         private const string MasterBranchName = "master";
         private const string TeamCityProjectNameAppSettingKey = "TeamCityProjectName";
         private const string PactBrokerUriAppSettingKey = "PactBrokerUri";
@@ -29,6 +27,7 @@ namespace Aqovia.PactProducerVerifier
         private readonly MethodInfo _method;
         private readonly ActionOutput _output;
         private readonly string _gitBranchName;
+        private readonly Action<IAppBuilder> _onWebAppStarting;
         private readonly int _maxBranchNameLength;
 
         private static string ProducerServiceName => ConfigurationManager.AppSettings[TeamCityProjectNameAppSettingKey];
@@ -37,10 +36,11 @@ namespace Aqovia.PactProducerVerifier
         private static string PactBrokerPassword => ConfigurationManager.AppSettings["PactBrokerPassword"];
         private static string PactBrokerUri => ConfigurationManager.AppSettings[PactBrokerUriAppSettingKey];
 
-        public PactProducerTests(Action<string> output, string gitBranchName, int maxBranchNameLength = int.MaxValue)
+        public PactProducerTests(Action<string> output, string gitBranchName, Action<IAppBuilder> onWebAppStarting = null, int maxBranchNameLength = int.MaxValue)
         {
             _output = new ActionOutput(output);
             _gitBranchName = gitBranchName;
+            _onWebAppStarting = onWebAppStarting;
             _maxBranchNameLength = maxBranchNameLength;
 
             if (string.IsNullOrEmpty(ProducerServiceName))
@@ -110,8 +110,7 @@ namespace Aqovia.PactProducerVerifier
         {
             using (WebApp.Start(uri.AbsoluteUri, builder =>
             {
-                var handler = WebAppStarted;
-                handler?.Invoke(this, builder);
+                _onWebAppStarting?.Invoke(builder);
 
                 _method.Invoke(_startup, new List<object> { builder }.ToArray());
             }))
