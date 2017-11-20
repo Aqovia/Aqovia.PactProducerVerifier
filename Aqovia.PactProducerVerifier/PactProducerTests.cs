@@ -29,6 +29,7 @@ namespace Aqovia.PactProducerVerifier
         private readonly string _gitBranchName;
         private readonly Action<IAppBuilder> _onWebAppStarting;
         private readonly int _maxBranchNameLength;
+        private readonly AppDomainHelper _appDomainHelper;
 
         private static string ProducerServiceName => ConfigurationManager.AppSettings[TeamCityProjectNameAppSettingKey];
         private static string ProjectName => ConfigurationManager.AppSettings["WebProjectName"];
@@ -57,13 +58,14 @@ namespace Aqovia.PactProducerVerifier
             var path = AppDomain.CurrentDomain.BaseDirectory;
 
             Assembly webAssembly;
+            _appDomainHelper = new AppDomainHelper();
             try
             {
-                webAssembly = ProjectName != null
-                    ? Assembly.LoadFile(Directory.GetFileSystemEntries(path, "*.dll")
+                webAssembly = _appDomainHelper.LoadAssembly(ProjectName != null
+                    ? new FileInfo(Directory.GetFileSystemEntries(path, "*.dll")
                         .Single(name => name.EndsWith($"{ProjectName}.dll")))
-                    : Assembly.LoadFile(Directory.GetFileSystemEntries(path, "*.dll")
-                        .Single(name => name.EndsWith("Web.dll")));
+                    : new FileInfo(Directory.GetFileSystemEntries(path, "*.dll")
+                        .Single(name => name.EndsWith("Web.dll"))));
             }
             catch (Exception e)
             {
@@ -104,6 +106,8 @@ namespace Aqovia.PactProducerVerifier
                         _output.WriteLine("will retry ...");
                 }
             }
+            //unload the newly created child appdomain
+            _appDomainHelper.Dispose();
         }
 
         private void EnsureApiHonoursPactWithConsumers(Uri uri)
