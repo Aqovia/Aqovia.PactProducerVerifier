@@ -19,15 +19,7 @@ This uses the beta version of PactNet, and Team City.
 * Install this package Aqovia.PactProducerVerifier
 * Install a test framework such as XUnit
 * Install GitInfo if you require to work out the git branch name locally 
-* Add the following configuration to your app.config file
-```
-  <appSettings>
-    <add key="PactBrokerUri" value="<YOUR PACT BROKER URL>" />
-    <add key="PactBrokerUsername" value="<YOUR PACT BROKER USERNAME OR BLANK>" />
-    <add key="PactBrokerPassword" value="<YOUR PACT BROKER PASSWORD OR BLANK>" />
-    <add key="TeamCityProjectName" value="<YOUR NAME OF THE PROJECT (PRODUCER)" />
-  </appSettings>
-```
+
 * Add the test (example using XUnit)
 ```
     public class PactProducerTests
