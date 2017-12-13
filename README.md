@@ -37,6 +37,10 @@ This uses the beta version of PactNet, and Team City.
                 ProjectName = "WEB API PROJECT YOU ARE TESTING (IF DOESN'T END IN Web.dll)')"
             };
 
+			 _pactProducerTests = new PactProducerTests(configuration, output.WriteLine, ThisAssembly.Git.Branch, null, TeamCityMaxBranchLength);
+
+			 // Or if you have given statements, set up state in the provider to match the given statements 
+
 			 _pactProducerTests = new PactProducerTests(configuration, output.WriteLine, ThisAssembly.Git.Branch, builder =>
             {
                 builder.UseMiddleware(typeof(TestStateProvider));
@@ -51,6 +55,13 @@ This uses the beta version of PactNet, and Team City.
            _pactProducerTests.EnsureApiHonoursPactWithConsumers();
         }
     }
+
+	public class TestStateProvider : BaseProviderStateMiddleware
+	{
+	        protected override IDictionary<string, Action> ProviderStates =>
+            new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase);
+			// populate with strings that match given statements with actions that set up the provider
+	}
 ```
 The PactProducerTests constructor takes in 3 parameters:
 * Configuration settings
