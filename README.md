@@ -28,10 +28,6 @@ This uses the beta version of PactNet, and Team City.
     <add key="TeamCityProjectName" value="<YOUR NAME OF THE PROJECT (PRODUCER)" />
   </appSettings>
 ```
-* If your web api project your testing doesn't end in Web.dll, add the configuration setting:
-```
-    <add key="WebProjectName" value="<YOUR WEB API PROJECT NAME" />
-```
 * Add the test (example using XUnit)
 ```
     public class PactProducerTests
@@ -39,9 +35,23 @@ This uses the beta version of PactNet, and Team City.
         private readonly Aqovia.PactProducerVerifier.PactProducerTests _pactProducerTests;
         private const int TeamCityMaxBranchLength = 19;
         public PactProducerTests(ITestOutputHelper output)
-        {
-            _pactProducerTests = new Aqovia.PactProducerVerifier.PactProducerTests(output.WriteLine, ThisAssembly.Git.Branch, TeamCityMaxBranchLength);
+        {            
+			var configuration = new ProducerVerifierConfiguration
+            {
+                ProviderName = "<YOUR NAME OF THE PROVIDER (E.G THE PROJECT NAME)",
+                PactBrokerUri = "<YOUR PACT BROKER URL>",
+				PactBrokerUsername = "<YOUR PACT BROKER USERNAME OR NULL>" ,
+                PactBrokerPassword = "<YOUR PACT BROKER PASSWORD OR NULL>",                
+                ProjectName = "WEB API PROJECT YOU ARE TESTING (IF DOESN'T END IN Web.dll)')"
+            };
+
+			 _pactProducerTests = new PactProducerTests(configuration, output.WriteLine, ThisAssembly.Git.Branch, builder =>
+            {
+                builder.UseMiddleware(typeof(TestStateProvider));
+
+            }, TeamCityMaxBranchLength);
         }
+
 
         [Fact]
         public void EnsureApiHonoursPactWithConsumers()
@@ -51,8 +61,10 @@ This uses the beta version of PactNet, and Team City.
     }
 ```
 The PactProducerTests constructor takes in 3 parameters:
+* Configuration settings
 * An Action<string> - this is used so the output of the pact test is outputted to the test results (in XUnit in this example)
 * The branch this code is in. This is used locally, but if running on the build server it uses the environment variable "ComponentBranch"
+* Callback for installing middleware in the AspNET pipeline. i.e. a custom state provider
 * The maximum branch name length (optional)
 
 ## Sample

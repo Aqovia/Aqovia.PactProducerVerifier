@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -18,40 +17,34 @@ namespace Aqovia.PactProducerVerifier
     public class PactProducerTests
     {
         private const string MasterBranchName = "master";
-        private const string TeamCityProjectNameAppSettingKey = "TeamCityProjectName";
-        private const string PactBrokerUriAppSettingKey = "PactBrokerUri";
         private const string BaseServiceUri = "http://localhost";
 
         private readonly RestClient _pactBrokerRestClient;
         private readonly object _startup;
         private readonly MethodInfo _method;
         private readonly ActionOutput _output;
+        private readonly ProducerVerifierConfiguration _configuration;
         private readonly string _gitBranchName;
         private readonly Action<IAppBuilder> _onWebAppStarting;
         private readonly int _maxBranchNameLength;
         private readonly AppDomainHelper _appDomainHelper;
 
-        private static string ProducerServiceName => ConfigurationManager.AppSettings[TeamCityProjectNameAppSettingKey];
-        private static string ProjectName => ConfigurationManager.AppSettings["WebProjectName"];
-        private static string PactBrokerUsername => ConfigurationManager.AppSettings["PactBrokerUsername"];
-        private static string PactBrokerPassword => ConfigurationManager.AppSettings["PactBrokerPassword"];
-        private static string PactBrokerUri => ConfigurationManager.AppSettings[PactBrokerUriAppSettingKey];
-
-        public PactProducerTests(Action<string> output, string gitBranchName, Action<IAppBuilder> onWebAppStarting = null, int maxBranchNameLength = int.MaxValue)
+        public PactProducerTests(ProducerVerifierConfiguration configuration, Action<string> output, string gitBranchName, Action<IAppBuilder> onWebAppStarting = null, int maxBranchNameLength = int.MaxValue)
         {
             _output = new ActionOutput(output);
+            _configuration = configuration;
             _gitBranchName = gitBranchName;
             _onWebAppStarting = onWebAppStarting;
             _maxBranchNameLength = maxBranchNameLength;
 
-            if (string.IsNullOrEmpty(ProducerServiceName))
+            if (string.IsNullOrEmpty(configuration.ProviderName))
             {
-                throw new ArgumentException($"App setting '{TeamCityProjectNameAppSettingKey}' is missing or not set");
+                throw new ArgumentException($"App setting '{nameof(configuration.ProviderName)}' is missing or not set");
             }
 
-            if (string.IsNullOrEmpty(PactBrokerUri))
+            if (string.IsNullOrEmpty(configuration.PactBrokerUri))
             {
-                throw new ArgumentException($"App setting '{PactBrokerUriAppSettingKey}' is missing or not set");
+                throw new ArgumentException($"App setting '{nameof(configuration.PactBrokerUri)}' is missing or not set");
             }
 
             _pactBrokerRestClient = SetupRestClient();
@@ -61,15 +54,15 @@ namespace Aqovia.PactProducerVerifier
             _appDomainHelper = new AppDomainHelper();
             try
             {
-                webAssembly = _appDomainHelper.LoadAssembly(ProjectName != null
+                webAssembly = _appDomainHelper.LoadAssembly(configuration.ProjectName != null
                     ? new FileInfo(Directory.GetFileSystemEntries(path, "*.dll")
-                        .Single(name => name.EndsWith($"{ProjectName}.dll")))
+                        .Single(name => name.EndsWith($"{configuration.ProjectName}.dll")))
                     : new FileInfo(Directory.GetFileSystemEntries(path, "*.dll")
                         .Single(name => name.EndsWith("Web.dll"))));
             }
             catch (Exception e)
             {
-                throw new FileNotFoundException($"Can not found any dll with name equal to '{ProjectName}' or ending with 'Web.dll'", e);
+                throw new FileNotFoundException($"Can not found any dll with name equal to '{nameof(configuration.ProjectName)}' or ending with 'Web.dll'", e);
             }
 
             Type type;
@@ -138,15 +131,15 @@ namespace Aqovia.PactProducerVerifier
             }
         }
 
-        private static string GetPactUrl(JToken consumer, string branchName)
+        private string GetPactUrl(JToken consumer, string branchName)
         {
-            return $"pacts/provider/{ProducerServiceName}/consumer/{consumer}/latest/{branchName}";
+            return $"pacts/provider/{_configuration.ProviderName}/consumer/{consumer}/latest/{branchName}";
         }
 
-        private static IEnumerable<JToken> GetConsumers(IRestClient client)
+        private IEnumerable<JToken> GetConsumers(IRestClient client)
         {
             IEnumerable<JToken> consumers = new List<JToken>();
-            var restRequest = new RestRequest($"pacts/provider/{ProducerServiceName}/latest");
+            var restRequest = new RestRequest($"pacts/provider/{_configuration.ProviderName}/latest");
             restRequest.AddHeader("Accept", "");
             var response = client.Execute(restRequest);
             if (response.StatusCode == HttpStatusCode.OK)
@@ -158,12 +151,12 @@ namespace Aqovia.PactProducerVerifier
             return consumers;
         }
 
-        private static RestClient SetupRestClient()
+        private RestClient SetupRestClient()
         {
             var client = new RestClient
             {
-                Authenticator = new HttpBasicAuthenticator(PactBrokerUsername, PactBrokerPassword),
-                BaseUrl = new Uri(PactBrokerUri),
+                Authenticator = new HttpBasicAuthenticator(_configuration.PactBrokerUsername, _configuration.PactBrokerPassword),
+                BaseUrl = new Uri(_configuration.PactBrokerUri),
             };
             return client;
         }
@@ -200,15 +193,15 @@ namespace Aqovia.PactProducerVerifier
             };
 
             PactUriOptions pactUriOptions = null;
-            if (!string.IsNullOrEmpty(PactBrokerUsername))
-                pactUriOptions = new PactUriOptions(PactBrokerUsername, PactBrokerPassword);
+            if (!string.IsNullOrEmpty(_configuration.PactBrokerUsername))
+                pactUriOptions = new PactUriOptions(_configuration.PactBrokerUsername, _configuration.PactBrokerPassword);
 
-            var pactUri = new Uri(new Uri(PactBrokerUri), pactUrl);
+            var pactUri = new Uri(new Uri(_configuration.PactBrokerUri), pactUrl);
             var pactVerifier = new PactVerifier(config);
 
             pactVerifier
                 .ProviderState($"{serviceUri}/provider-states")
-                .ServiceProvider(ProducerServiceName, serviceUri)
+                .ServiceProvider(_configuration.ProviderName, serviceUri)
                 .HonoursPactWith(consumer.ToString())
                 .PactUri(pactUri.AbsoluteUri, pactUriOptions)
                 .Verify();
