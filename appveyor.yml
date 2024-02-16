@@ -21,8 +21,11 @@ assembly_info:
   assembly_file_version: '{version}'
   assembly_informational_version: '{version}'
 
+install:
+- ps: appveyor DownloadFile https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+
 before_build:
-- ps: nuget restore Aqovia.PactProducerVerifier.sln
+- ps: nuget restore -verbosity detailed Aqovia.PactProducerVerifier.sln
 
 build:
   publish_nuget: true
