@@ -76,9 +76,9 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\GitInfo.1.1.71\build\GitInfo.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitInfo.1.1.71\build\GitInfo.targets'))" />
+    <Error Condition="!Exists('..\packages\GitInfo.2.0.11\build\GitInfo.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitInfo.2.0.11\build\GitInfo.targets'))" />
     <Error Condition="!Exists('..\packages\PactNet.Windows.2.0.17\build\PactNet.Windows.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\PactNet.Windows.2.0.17\build\PactNet.Windows.targets'))" />
   </Target>
-  <Import Project="..\packages\GitInfo.1.1.71\build\GitInfo.targets" Condition="Exists('..\packages\GitInfo.1.1.71\build\GitInfo.targets')" />
+  <Import Project="..\packages\GitInfo.2.0.11\build\GitInfo.targets" Condition="Exists('..\packages\GitInfo.2.0.11\build\GitInfo.targets')" />
   <Import Project="..\packages\PactNet.Windows.2.0.17\build\PactNet.Windows.targets" Condition="Exists('..\packages\PactNet.Windows.2.0.17\build\PactNet.Windows.targets')" />
 </Project>
