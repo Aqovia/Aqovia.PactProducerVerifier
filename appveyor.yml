@@ -8,7 +8,7 @@
 version: 1.0.{build}
 configuration: Release
 platform: Any CPU
-image: Visual Studio 2017
+image: Visual Studio 2022
 
 pull_requests:
   do_not_increment_build_number: true
@@ -22,20 +22,8 @@ assembly_info:
   assembly_file_version: '{version}'
   assembly_informational_version: '{version}'
 
-dotnet_csproj:
-  patch: true
-  file: '**\*.csproj'
-
-install:
- - appveyor DownloadFile https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
-
-cache:
- - packages -> **\packages.config 
-
 before_build:
-- ps: https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.ps1 
-- ps: appveyor-retry nuget restore -verbosity detailed Aqovia.PactProducerVerifier.sln
- 
+- ps: nuget restore Aqovia.PactProducerVerifier.sln
 
 build:
   publish_nuget: true
