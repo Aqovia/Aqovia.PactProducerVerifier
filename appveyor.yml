@@ -26,11 +26,9 @@ assembly_info:
   assembly_informational_version: '{version}'
 
 before_build:
- - ps: Write-Host "This is PowerShell call in before build" 
  - ps: nuget restore
 
 build:
-  publish_wap: true  
   publish_nuget: true
   publish_nuget_symbols: true
   include_nuget_references: true
