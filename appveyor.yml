@@ -22,6 +22,10 @@ assembly_info:
   assembly_file_version: '{version}'
   assembly_informational_version: '{version}'
 
+dotnet_csproj:
+  patch: true
+  file: '**\*.csproj'
+
 install:
  - appveyor DownloadFile https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
 
@@ -29,7 +33,9 @@ cache:
  - packages -> **\packages.config 
 
 before_build:
- - appveyor-retry nuget restore -verbosity detailed Aqovia.PactProducerVerifier.sln
+- ps: https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.ps1 
+- ps: appveyor-retry nuget restore -verbosity detailed Aqovia.PactProducerVerifier.sln
+ 
 
 build:
   publish_nuget: true
