@@ -23,7 +23,7 @@ assembly_info:
   assembly_informational_version: '{version}'
 
 before_build:
-- ps: nuget restore Aqovia.PactProducerVerifier.sln
+ - nuget restore
 
 build:
   publish_nuget: true
