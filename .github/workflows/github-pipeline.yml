@@ -26,6 +26,8 @@ jobs:
           fetch-depth: 0
       - name: Restore
         run: dotnet restore
+      - name: Restore Packages
+        run: nuget restore $PROJECT_NAME.sln
       - name: Build
         run: dotnet build -c Release --no-restore
       - name: Test
