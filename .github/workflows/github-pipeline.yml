@@ -36,7 +36,7 @@ jobs:
       #  id: build-vars
       #  uses: ./.github/actions/set-build-variables
       - name: Pack
-        run: dotnet pack -v normal -c Release --no-restore -p:Version=${last_tagged_version} src/${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
+        run: dotnet pack -v normal -c Release --no-restore -p:Version=${last_tagged_version} ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
         env:
           last_tagged_version: 1.1.${{ github.run_attempt }}
       - name: Upload Artifact
