@@ -31,7 +31,7 @@ jobs:
       - name: Build
         run: dotnet build -c Release --no-restore
       - name: Test
-        run: '[[ ! -z $(ls test) ]] && dotnet test -c Release --no-restore'
+        run: 'dotnet test -c Release --no-restore'
       - name: Extract Build Variables
         id: build-vars
         uses: ./.github/actions/set-build-variables
