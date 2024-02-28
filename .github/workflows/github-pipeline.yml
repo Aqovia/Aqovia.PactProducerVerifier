@@ -49,7 +49,7 @@ jobs:
   branch_preview:
     needs: build
     if: github.event_name == 'push' && github.ref != 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: windows-2019
     steps:
       - name: Download Artifact
         uses: actions/download-artifact@v1
@@ -60,7 +60,7 @@ jobs:
   deploy:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
         uses: actions/checkout@v3
