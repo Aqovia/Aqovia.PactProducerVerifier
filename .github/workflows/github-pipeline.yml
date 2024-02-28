@@ -62,10 +62,10 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: windows-2019
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+      #- name: Checkout
+      #  uses: actions/checkout@v3
+      #  with:
+      #    fetch-depth: 0
       - name: Extract pull request details
         id: pr
         uses: 8BitJonny/gh-get-current-pr@1.2.0        
