@@ -32,15 +32,14 @@ jobs:
         run: dotnet build -c Release --no-restore
       - name: Test
         run: 'dotnet test -c Release --no-restore'
-      - name: Extract Build Variables
-        id: build-vars
-        uses: ./.github/actions/set-build-variables
+      #- name: Extract Build Variables
+      #  id: build-vars
+      #  uses: ./.github/actions/set-build-variables
       - name: Pack
         run: |
-          dotnet pack -v normal -c Release --no-restore -p:Version=${last_tagged_version}-${branch_name}-$GITHUB_RUN_ID src/$PROJECT_NAME/$PROJECT_NAME.csproj
+          dotnet pack -v normal -c Release --no-restore -p:Version=${last_tagged_version}-$GITHUB_RUN_ID src/$PROJECT_NAME/$PROJECT_NAME.csproj
         env:
-          last_tagged_version: ${{ steps.build-vars.outputs.last-tagged-version }}
-          branch_name: ${{ steps.build-vars.outputs.branch-name }}
+          last_tagged_version: 1.1.${{ github.run_attempt }}
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
@@ -66,14 +65,14 @@ jobs:
       #  uses: actions/checkout@v3
       #  with:
       #    fetch-depth: 0
-      - name: Extract pull request details
-        id: pr
-        uses: 8BitJonny/gh-get-current-pr@1.2.0        
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          sha: ${{ github.sha }}
-          filterOutClosed: false
-          new-version: 1.0.${{ steps.pr.outputs.number }}
+      #- name: Extract pull request details
+      #  id: pr
+      #  uses: 8BitJonny/gh-get-current-pr@1.2.0        
+      #  with:
+      #    github-token: ${{ secrets.GITHUB_TOKEN }}
+      #    sha: ${{ github.sha }}
+      #    filterOutClosed: false
+      #    new-version: 1.0.${{ steps.pr.outputs.number }}
       #- name: Extract Build Variables
       #  id: build-vars
       #  uses: ./.github/actions/set-build-variables
@@ -99,7 +98,7 @@ jobs:
         if: success() && steps.pr.outputs.new-version
         run: dotnet pack -v normal -c Release -p:Version=${new_version} -o nupkg src/$PROJECT_NAME/$PROJECT_NAME.csproj
         env:
-          new_version: ${{ steps.pr.outputs.new-version }}
+          new_version: 1.1.${{ github.run_attempt }}
       #- name: Push to GitHub Feed
       #  if: success()
       #  run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.GITHUB_FEED }} --api-key ${GITHUB_TOKEN}
