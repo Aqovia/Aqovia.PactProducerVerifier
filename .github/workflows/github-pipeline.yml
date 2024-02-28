@@ -46,15 +46,15 @@ jobs:
         with:
           name: nupkg
           path: ./src/${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
-  branch_preview:
-    needs: build
-    if: github.event_name == 'push' && github.ref != 'refs/heads/master'
-    runs-on: windows-2019
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v1
-        with:
-          name: nupkg
+  #branch_preview:
+  #  needs: build
+  #  if: github.event_name == 'push' && github.ref != 'refs/heads/master'
+  #  runs-on: windows-2019
+  #  steps:
+  #    - name: Download Artifact
+  #      uses: actions/download-artifact@v1
+  #      with:
+  #        name: nupkg
       #- name: Push to GitHub Feed
       #  run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.GITHUB_FEED }} --api-key ${GITHUB_TOKEN}
   deploy:
@@ -73,17 +73,19 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ github.sha }}
           filterOutClosed: false
-      - name: Extract Build Variables
-        id: build-vars
-        uses: ./.github/actions/set-build-variables
-      - name: Prepare Release
-        id: prepare-release
-        if: success() && steps.pr.outputs.number
-        uses: ./.github/actions/prepare-release
-        with:
-          last-tagged-version: ${{ steps.build-vars.outputs.last-tagged-version }}
-          pr-title: ${{ steps.pr.outputs.pr_title }}
-          pr-body: ${{ steps.pr.outputs.pr_body }}
+          new-version: 1.0.${{ steps.pr.outputs.number }}
+      #- name: Extract Build Variables
+      #  id: build-vars
+      #  uses: ./.github/actions/set-build-variables
+      #- name: Prepare Release
+      #  id: prepare-release
+      #  if: success() && steps.pr.outputs.number
+      #  uses: ./.github/actions/set-build-variables
+      #  with:
+      #    last-tagged-version: ${{ steps.build-vars.outputs.last-tagged-version }}
+      #    pr-title: ${{ steps.pr.outputs.pr_title }}
+      #    pr-body: ${{ steps.pr.outputs.pr_body }}
+          
       #- name: Create a GitHub Release
       #  id: create_release
       #  if: success() && steps.prepare-release.outputs.tag-name 
@@ -94,10 +96,10 @@ jobs:
       #    body_path: /tmp/note.md
       #    prerelease: false
       - name: Create Release NuGet package
-        if: success() && steps.prepare-release.outputs.new-version
+        if: success() && steps.pr.outputs.new-version
         run: dotnet pack -v normal -c Release -p:Version=${new_version} -o nupkg src/$PROJECT_NAME/$PROJECT_NAME.csproj
         env:
-          new_version: ${{ steps.prepare-release.outputs.new-version }}
+          new_version: ${{ steps.pr.outputs.new-version }}
       #- name: Push to GitHub Feed
       #  if: success()
       #  run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.GITHUB_FEED }} --api-key ${GITHUB_TOKEN}
