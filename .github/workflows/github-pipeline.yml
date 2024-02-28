@@ -95,7 +95,7 @@ jobs:
       #    prerelease: false
       - name: Create Release NuGet package
         if: success() && steps.pr.outputs.new-version
-        run: dotnet pack -v normal -c Release -p:Version=${new_version} -o nupkg src/${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
+        run: dotnet pack -v normal -c Release -p:Version=${new_version} -o nupkg ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
         env:
           new_version: 1.1.${{ github.run_attempt }}
       #- name: Push to GitHub Feed
