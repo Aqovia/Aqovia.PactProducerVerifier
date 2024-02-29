@@ -38,7 +38,7 @@ jobs:
       #  id: build-vars
       #  uses: ./.github/actions/set-build-variables
       - name: Pack
-        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version ${last_tagged_version} -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${last_tagged_version}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
           last_tagged_version: 1.1.${{ github.run_attempt }}
       - name: Upload Artifact
