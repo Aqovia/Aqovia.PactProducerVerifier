@@ -16,6 +16,7 @@ env:
   # Official NuGet Feed settings
   NUGET_FEED: https://api.nuget.org/v3/index.json
   NUGET_KEY: 8nOJ8wjmitnOcDwlirh5QLHECezb9AQgSzbXbBsNkOBGhtOxz1WDQKBDOZXIhoM9
+  LATEST_BUILD_NUMBER: 1.1.${{ github.run_number }}
 jobs:
   build:
     runs-on: windows-2019
@@ -24,14 +25,10 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Output Run ID
-        run: echo ${{ github.run_id }}
       - name: Output Run Number
-        run: echo ${{ github.run_number }}
-      - name: Output Run Attempt
-        run: echo ${{ github.run_attempt }}
+        run: echo ${{ github.run_number }}      
       - name: Print new build number
-        run: echo "Build number is $BUILD_NUMBER"
+        run: echo "Build number is ${env:BUILD_NUMBER}"
       - name: Setup Nuget.exe
         uses: nuget/setup-nuget@v2
       - name: Restore
@@ -46,7 +43,7 @@ jobs:
       #  id: build-vars
       #  uses: ./.github/actions/set-build-variables
       - name: Pack
-        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "1.1.20" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.LATEST_BUILD_NUMBER }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
           last_tagged_version: 1.1.${{ github.run_attempt }}
       - name: Upload Artifact
