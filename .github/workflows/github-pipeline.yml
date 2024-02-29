@@ -29,14 +29,14 @@ jobs:
       - name: Restore Packages
         run: nuget restore $PROJECT_NAME.sln
       - name: Build
-        run: dotnet build -c Release --no-restore
+        run: dotnet build ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj -c Release --no-restore -p:GeneratePackageOnBuild=true -p:IncludeSource=true -p:IncludeSymbols=true
       - name: Test
         run: 'dotnet test -c Release --no-restore'
       #- name: Extract Build Variables
       #  id: build-vars
       #  uses: ./.github/actions/set-build-variables
       - name: Pack
-        run: dotnet pack -v normal -c Release --no-restore -p:Version=${last_tagged_version} ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
+        run: dotnet pack -v normal -c Release --no-restore -p:Version=${last_tagged_version} ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj --include-symbols
         env:
           last_tagged_version: 1.1.${{ github.run_attempt }}
       - name: Upload Artifact
