@@ -44,7 +44,7 @@ jobs:
       - name: Restore Packages
         run: nuget restore $PROJECT_NAME.sln
       - name: Build
-        run: dotnet build -c Release --no-restore
+        run: dotnet build ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj -c Release --no-restore -p:GeneratePackageOnBuild=true -p:IncludeSource=true -p:IncludeSymbols=true -p:NuspecFile=${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec
       - name: Extract Build Variables
         id: build-vars
         uses: ./.github/actions/set-build-variables
