@@ -51,7 +51,7 @@ jobs:
       - name: Test
         run: dotnet test -c Release Samples/${{ env.TEST_PROJECT_NAME }}       
       - name: Pack
-        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${last_tagged_version}-${branch_name}-$GITHUB_RUN_ID" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.last_tagged_version }}-${{ env.branch_name }}-${{ env.GITHUB_RUN_ID }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
           last_tagged_version: ${{ steps.build-vars.outputs.last-tagged-version }}
           branch_name: ${{ steps.build-vars.outputs.branch-name }}
