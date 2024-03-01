@@ -1,6 +1,7 @@
 name: Nuget Publish CI
 on:
   push:
+    branches: [ "master" ]     
   pull_request:
     branches: [ "master" ]      
 env:
@@ -9,10 +10,7 @@ env:
   # Disable sending usage data to Microsoft
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   # Project name to pack and publish
-  PROJECT_NAME: Aqovia.PactProducerVerifier
-  # GitHub Packages Feed settings
-  #GITHUB_FEED: https://pkgs.dev.azure.com/aqovia-opensource/4feb2f54-ea14-4724-966c-b30048d22334/_packaging/NuGetOSS/nuget/v3/index.json
-  #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PROJECT_NAME: Aqovia.PactProducerVerifier  
   # Official NuGet Feed settings
   NUGET_FEED: https://api.nuget.org/v3/index.json
   NUGET_KEY: 8nOJ8wjmitnOcDwlirh5QLHECezb9AQgSzbXbBsNkOBGhtOxz1WDQKBDOZXIhoM9
@@ -25,10 +23,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Output Run Number
-        run: echo ${{ github.run_number }}      
-      - name: Print new build number
-        run: echo "Build number is ${env:BUILD_NUMBER}"
       - name: Setup Nuget.exe
         uses: nuget/setup-nuget@v2
       - name: Restore
@@ -38,10 +32,7 @@ jobs:
       - name: Build
         run: dotnet build ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj -c Release --no-restore -p:GeneratePackageOnBuild=true -p:IncludeSource=true -p:IncludeSymbols=true -p:NuspecFile=${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec
       - name: Test
-        run: 'dotnet test -c Release --no-restore'
-      #- name: Extract Build Variables
-      #  id: build-vars
-      #  uses: ./.github/actions/set-build-variables
+        run: 'dotnet test -c Release --no-restore'      
       - name: Pack
         run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.LATEST_BUILD_NUMBER }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
@@ -51,6 +42,9 @@ jobs:
         with:
           name: nupkg
           path: ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
+      - name: Push to NuGet Feed
+        if: success() && env.LATEST_BUILD_NUMBER
+        run: dotnet nuget push ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY
   #branch_preview:
   #  needs: build
   #  if: github.event_name == 'push' && github.ref != 'refs/heads/master'
@@ -109,5 +103,5 @@ jobs:
       #  if: success()
       #  run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.GITHUB_FEED }} --api-key ${GITHUB_TOKEN}
       - name: Push to NuGet Feed
-        if: success() && env.NEW_VERSION
-        run: dotnet nuget push ./nupkg/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY
+        if: success() && env.LATEST_BUILD_NUMBER
+        run: dotnet nuget push ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY
