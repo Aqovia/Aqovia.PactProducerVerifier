@@ -62,7 +62,7 @@ jobs:
           path: ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
   branch_preview:
     needs: build
-    if: github.event_name == 'push' && github.ref != 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
