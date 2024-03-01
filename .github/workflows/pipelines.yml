@@ -49,7 +49,7 @@ jobs:
         id: build-vars
         uses: ./.github/actions/set-build-variables
       - name: Test
-        run: dotnet test -c Release test/${{ env.TEST_PROJECT_NAME }}       
+        run: dotnet test -c Release Samples/${{ env.TEST_PROJECT_NAME }}       
       - name: Pack
         run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${last_tagged_version}-${branch_name}-$GITHUB_RUN_ID" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
