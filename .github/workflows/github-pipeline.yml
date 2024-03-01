@@ -43,7 +43,7 @@ jobs:
           path: ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
       - name: Push to NuGet Feed
         if: success() && env.LATEST_BUILD_NUMBER
-        run: dotnet nuget push ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY
+        run: dotnet nuget push ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg -s ${{ env.NUGET_FEED }} --skip-duplicate -k ${{ env.NUGET_KEY }}
   #branch_preview:
   #  needs: build
   #  if: github.event_name == 'push' && github.ref != 'refs/heads/master'
