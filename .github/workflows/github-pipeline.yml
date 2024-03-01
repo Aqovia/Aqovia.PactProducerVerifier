@@ -43,64 +43,12 @@ jobs:
           path: ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
       - name: Push to NuGet Feed
         if: success() && env.LATEST_BUILD_NUMBER
-        run: dotnet nuget push ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg -s ${{ env.NUGET_FEED }} --skip-duplicate -k ${{ env.NUGET_KEY }}
-  #branch_preview:
-  #  needs: build
-  #  if: github.event_name == 'push' && github.ref != 'refs/heads/master'
-  #  runs-on: windows-2019
-  #  steps:
-  #    - name: Download Artifact
-  #      uses: actions/download-artifact@v1
-  #      with:
-  #        name: nupkg
-      #- name: Push to GitHub Feed
-      #  run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.GITHUB_FEED }} --api-key ${GITHUB_TOKEN}
+        run: dotnet nuget push ${{ env.PROJECT_NAME }}/bin/Release/*.nupkg -s ${{ env.NUGET_FEED }} --skip-duplicate -k ${{ env.NUGET_KEY }}  
   deploy:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: windows-2019
-    steps:
-      #- name: Checkout
-      #  uses: actions/checkout@v3
-      #  with:
-      #    fetch-depth: 0
-      #- name: Extract pull request details
-      #  id: pr
-      #  uses: 8BitJonny/gh-get-current-pr@1.2.0        
-      #  with:
-      #    github-token: ${{ secrets.GITHUB_TOKEN }}
-      #    sha: ${{ github.sha }}
-      #    filterOutClosed: false
-      #    new-version: 1.0.${{ steps.pr.outputs.number }}
-      #- name: Extract Build Variables
-      #  id: build-vars
-      #  uses: ./.github/actions/set-build-variables
-      #- name: Prepare Release
-      #  id: prepare-release
-      #  if: success() && steps.pr.outputs.number
-      #  uses: ./.github/actions/set-build-variables
-      #  with:
-      #    last-tagged-version: ${{ steps.build-vars.outputs.last-tagged-version }}
-      #    pr-title: ${{ steps.pr.outputs.pr_title }}
-      #    pr-body: ${{ steps.pr.outputs.pr_body }}
-          
-      #- name: Create a GitHub Release
-      #  id: create_release
-      #  if: success() && steps.prepare-release.outputs.tag-name 
-      #  uses: actions/create-release@v1
-      #  with:
-      #    tag_name: ${{ steps.prepare-release.outputs.tag-name }}
-      #    release_name: ${{ steps.prepare-release.outputs.new-version }}
-      #    body_path: /tmp/note.md
-      #    prerelease: false
-      #- name: Create Release NuGet package
-      #  if: success() && steps.pr.outputs.new-version
-      #  run: dotnet pack -v normal -c Release -p:Version=${new_version} -o nupkg ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
-      #  env:
-      #    new_version: 1.1.${{ github.run_attempt }}
-      #- name: Push to GitHub Feed
-      #  if: success()
-      #  run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.GITHUB_FEED }} --api-key ${GITHUB_TOKEN}
+    steps:      
       - name: Push to NuGet Feed
         if: success() && env.LATEST_BUILD_NUMBER
         run: dotnet nuget push ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg --source $NUGET_FEED --skip-duplicate --api-key $NUGET_KEY
