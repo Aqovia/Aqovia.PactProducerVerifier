@@ -59,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: nupkg
-          path: ./src/${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
+          path: ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
   branch_preview:
     needs: build
     if: github.event_name == 'push' && github.ref != 'refs/heads/master'
@@ -115,7 +115,7 @@ jobs:
           prerelease: false
       - name: Create Release NuGet package
         if: success() && steps.prepare-release.outputs.new-version
-        run: dotnet pack -v normal -c Release -p:Version=${new_version} -o nupkg src/$PROJECT_NAME/$PROJECT_NAME.csproj
+        run: dotnet pack -v normal -c Release -p:Version=${new_version} -o nupkg $PROJECT_NAME/$PROJECT_NAME.csproj
         env:
           new_version: ${{ steps.prepare-release.outputs.new-version }}
       - name: Publish the package to Nuget feed

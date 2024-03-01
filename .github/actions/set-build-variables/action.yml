@@ -12,8 +12,8 @@ runs:
   steps:
     - id: get-last-tagged-version 
       run: |
-        ## get the last tagged version from the tag history of the current branch - if none is found default to version '0.0.0'
-        LAST_TAGGED_VERSION=`git tag --sort=-committerdate 'v*' --merged | head -n 1 | sed -Ee 's/v//g'` && [ -z $LAST_TAGGED_VERSION ] && LAST_TAGGED_VERSION=0.0.0
+        ## get the last tagged version from the tag history of the current branch - if none is found default to version '1.1.0'
+        LAST_TAGGED_VERSION=`git tag --sort=-committerdate 'v*' --merged | head -n 1 | sed -Ee 's/v//g'` && [ -z $LAST_TAGGED_VERSION ] && LAST_TAGGED_VERSION=1.1.0
         echo "::set-output name=last-tagged-version::$LAST_TAGGED_VERSION"
       shell: bash
     - id: get-branch-name
