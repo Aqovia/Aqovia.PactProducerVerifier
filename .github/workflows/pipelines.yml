@@ -31,14 +31,18 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - name: Setup Nuget.exe
+        uses: nuget/setup-nuget@v2
       - name: Restore
         run: dotnet restore
+      - name: Restore Packages
+        run: nuget restore $PROJECT_NAME.sln
       - name: Build
         run: dotnet build -c Release --no-restore
       - name: Extract Build Variables
@@ -47,7 +51,7 @@ jobs:
       - name: Test
         run: dotnet test -c Release test/${{ env.TEST_PROJECT_NAME }}       
       - name: Pack
-        run: dotnet pack -v normal -c Release --no-restore -p:Version=${last_tagged_version}-${branch_name}-$GITHUB_RUN_ID src/$PROJECT_NAME/$PROJECT_NAME.csproj
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${last_tagged_version}-${branch_name}-$GITHUB_RUN_ID" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
           last_tagged_version: ${{ steps.build-vars.outputs.last-tagged-version }}
           branch_name: ${{ steps.build-vars.outputs.branch-name }}
