@@ -1,0 +1,123 @@
+name: Nuget Publish CI
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+env:
+  
+  # Stop wasting time caching packages
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  
+  # Disable sending usage data to Microsoft
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  
+  # Project name to pack and publish
+  PROJECT_NAME: Aqovia.PactProducerVerifier
+  
+  # Extra varibale to target test project
+  TEST_PROJECT_NAME: Aqovia.PactProducerVerifier.Sample
+  
+  # Github auth token
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Aqovia preview feed settings
+  NUGET_PREVIEW_FEED: https://pkgs.dev.azure.com/aqovia-opensource/4feb2f54-ea14-4724-966c-b30048d22334/_packaging/NuGetOSS/nuget/v3/index.json
+  NUGET_PREVIEW_FEED_PUBLISH_KEY: ${{ secrets.NUGET_PREVIEW_FEED_PUBLISH_KEY }}
+
+  # Official NuGet Feed settings
+  NUGET_FEED: https://api.nuget.org/v3/index.json
+  NUGET_KEY: ${{ secrets.NUGET_ORG_PUBLISH_API_KEY }}
+
+jobs:
+  build:
+    runs-on: windows-2019
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Nuget.exe
+        uses: nuget/setup-nuget@v2
+      - name: Restore
+        run: dotnet restore
+      - name: Restore Packages
+        run: nuget restore $PROJECT_NAME.sln
+      - name: Build
+        run: dotnet build ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj -c Release --no-restore -p:GeneratePackageOnBuild=true -p:IncludeSource=true -p:IncludeSymbols=true -p:NuspecFile=${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec
+      - name: Extract Build Variables
+        id: build-vars
+        uses: ./.github/actions/set-build-variables
+      - name: Test
+        run: dotnet test -c Release Samples/${{ env.TEST_PROJECT_NAME }}       
+      - name: Pack
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.last_tagged_version }}-${{ env.branch_name }}-${{ env.GITHUB_RUN_ID }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
+        env:
+          last_tagged_version: ${{ steps.build-vars.outputs.last-tagged-version }}
+          branch_name: ${{ steps.build-vars.outputs.branch-name }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: nupkg
+          path: ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
+  branch_preview:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: nupkg
+      - name: Setup publish token  
+        uses: actions/setup-dotnet@v1
+        with:
+          source-url: ${{ env.NUGET_PREVIEW_FEED }}
+        env:
+          NUGET_AUTH_TOKEN: ${{ env.NUGET_PREVIEW_FEED_PUBLISH_KEY }}
+      - name: Publish the package to Nuget preview feed
+        run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_PREVIEW_FEED }} --api-key AzureArtifact
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Extract pull request details
+        id: pr
+        uses: 8BitJonny/gh-get-current-pr@1.2.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ github.sha }}
+          filterOutClosed: false
+      - name: Extract Build Variables
+        id: build-vars
+        uses: ./.github/actions/set-build-variables
+      - name: Prepare Release
+        id: prepare-release
+        if: success() && steps.pr.outputs.number
+        uses: ./.github/actions/prepare-release
+        with:
+          last-tagged-version: ${{ steps.build-vars.outputs.last-tagged-version }}
+          pr-title: ${{ steps.pr.outputs.pr_title }}
+          pr-body: ${{ steps.pr.outputs.pr_body }}
+      - name: Create a GitHub Release
+        id: create_release
+        if: success() && steps.prepare-release.outputs.tag-name 
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.prepare-release.outputs.tag-name }}
+          release_name: ${{ steps.prepare-release.outputs.new-version }}
+          body_path: /tmp/note.md
+          prerelease: false
+      - name: Create Release NuGet package
+        if: success() && steps.prepare-release.outputs.new-version
+        run: dotnet pack -v normal -c Release -p:Version=${new_version} -o nupkg $PROJECT_NAME/$PROJECT_NAME.csproj
+        env:
+          new_version: ${{ steps.prepare-release.outputs.new-version }}
+      - name: Publish the package to Nuget feed
+        if: success() && steps.prepare-release.outputs.new-version
+        run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_FEED }} --skip-duplicate --api-key ${{ env.NUGET_KEY }}
