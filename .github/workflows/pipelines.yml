@@ -51,7 +51,7 @@ jobs:
       - name: Test
         run: dotnet test -c Release Samples/${{ env.TEST_PROJECT_NAME }}       
       - name: Pack
-        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.last_tagged_version }}-${{ env.branch_name }}-${{ env.GITHUB_RUN_ID }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.last_tagged_version }}-${{ env.branch_name }}-${{ env.GITHUB_RUN_NUMBER }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
           last_tagged_version: ${{ steps.build-vars.outputs.last-tagged-version }}
           branch_name: ${{ steps.build-vars.outputs.branch-name }}
@@ -62,7 +62,7 @@ jobs:
           path: ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
   branch_preview:
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref != 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
@@ -76,11 +76,11 @@ jobs:
         env:
           NUGET_AUTH_TOKEN: ${{ env.NUGET_PREVIEW_FEED_PUBLISH_KEY }}
       - name: Publish the package to Nuget preview feed
-        run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_PREVIEW_FEED }} --api-key AzureArtifact
+        run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_PREVIEW_FEED }} --api-key AzureArtifact --skip-duplicate
   deploy:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -115,9 +115,9 @@ jobs:
           prerelease: false
       - name: Create Release NuGet package
         if: success() && steps.prepare-release.outputs.new-version
-        run: dotnet pack -v normal -c Release -p:Version=${new_version} -o nupkg $PROJECT_NAME/$PROJECT_NAME.csproj
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${new_version}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
           new_version: ${{ steps.prepare-release.outputs.new-version }}
       - name: Publish the package to Nuget feed
         if: success() && steps.prepare-release.outputs.new-version
-        run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_FEED }} --skip-duplicate --api-key ${{ env.NUGET_KEY }}
+        run: nuget push ${{ env.PROJECT_NAME }}/bin/Release/*.nupkg --source ${{ env.NUGET_FEED }} --skip-duplicate --api-key ${{ env.NUGET_KEY }} 
