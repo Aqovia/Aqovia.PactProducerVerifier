@@ -111,7 +111,6 @@ jobs:
         with:
           tag_name: ${{ steps.prepare-release.outputs.tag-name }}
           release_name: ${{ steps.prepare-release.outputs.new-version }}
-          body_path: /tmp/note.md
           prerelease: false
       - name: Create Release NuGet package
         if: success() && steps.prepare-release.outputs.new-version
