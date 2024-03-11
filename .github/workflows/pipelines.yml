@@ -95,29 +95,20 @@ jobs:
           filterOutClosed: false
       - name: Extract Build Variables
         id: build-vars
-        uses: ./.github/actions/set-build-variables
-      - name: Prepare Release
-        id: prepare-release
-        if: success() && steps.pr.outputs.number
-        uses: ./.github/actions/prepare-release
-        with:
-          last-tagged-version: ${{ steps.build-vars.outputs.last-tagged-version }}
-          pr-title: ${{ steps.pr.outputs.pr_title }}
-          pr-body: ${{ steps.pr.outputs.pr_body }}
+        uses: ./.github/actions/set-build-variables    
       - name: Create a GitHub Release
-        id: create_release
-        if: success() && steps.prepare-release.outputs.tag-name 
+        id: create_release 
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ steps.prepare-release.outputs.tag-name }}
-          release_name: ${{ steps.prepare-release.outputs.new-version }}
+          tag_name: 1.1.${{ env.GITHUB_RUN_NUMBER }}
+          release_name: 1.1.${{ env.GITHUB_RUN_NUMBER }}
           body_path: /tmp/note.md
           prerelease: false
       - name: Create Release NuGet package
         if: success() && steps.prepare-release.outputs.new-version
         run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${new_version}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
-          new_version: ${{ steps.prepare-release.outputs.new-version }}
+          new_version: 1.1.${{ env.GITHUB_RUN_NUMBER }}
       - name: Publish the package to Nuget feed
         if: success() && steps.prepare-release.outputs.new-version
         run: nuget push ${{ env.PROJECT_NAME }}/bin/Release/*.nupkg --source ${{ env.NUGET_FEED }} --skip-duplicate --api-key ${{ env.NUGET_KEY }} 
