@@ -59,19 +59,19 @@ jobs:
           pr-title: ${{ steps.build-vars.outputs.branch-name }}
           pr-body: ${{ steps.build-vars.outputs.branch-name }}      
       - name: Pack branch preview
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push' && github.ref != 'refs/heads/master'
         run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.latest_version }}-${{ env.branch_name }}-${{ github.GITHUB_RUN_ATTEMPT }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
           latest_version: ${{ steps.build-vars.outputs.last-tagged-version }}
           branch_name: ${{ steps.build-vars.outputs.branch-name }}
       - name: Pack master deploy
-        if: github.event_name == 'push' && github.ref != 'refs/heads/master'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.latest_version }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
           latest_version: ${{ steps.prepare-release.outputs.new-version }}
       - name: Create a GitHub Release
         id: create_release
-        if: success() && github.event_name == 'push' && github.ref != 'refs/heads/master' && steps.prepare-release.outputs.tag-name 
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master' && steps.prepare-release.outputs.tag-name 
         uses: actions/create-release@v1
         with:
           tag_name: ${{ steps.prepare-release.outputs.tag-name }}
@@ -84,7 +84,7 @@ jobs:
           path: ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
   branch_preview:
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref != 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
@@ -101,7 +101,7 @@ jobs:
         run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_PREVIEW_FEED }} --api-key AzureArtifact --skip-duplicate
   master_deploy:
     needs: build
-    if: github.event_name == 'push' && github.ref != 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
