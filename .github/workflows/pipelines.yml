@@ -114,7 +114,7 @@ jobs:
           prerelease: false
       - name: Create Release NuGet package
         if: success() && steps.prepare-release.outputs.new-version
-        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${new_version}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.new_version }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
           new_version: ${{ steps.prepare-release.outputs.new-version }}
       - name: Publish the package to Nuget feed
