@@ -115,4 +115,4 @@ jobs:
         env:
           NUGET_AUTH_TOKEN: ${{ env.NUGET_KEY }}
       - name: Publish the package to Nuget feed
-        run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_FEED }} --api-key AzureArtifact --skip-duplicate       
+        run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_FEED }} --api-key ${{ env.NUGET_KEY }} --skip-duplicate       
