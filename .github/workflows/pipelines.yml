@@ -45,16 +45,38 @@ jobs:
         run: nuget restore $PROJECT_NAME.sln
       - name: Build
         run: dotnet build ${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj -c Release --no-restore -p:GeneratePackageOnBuild=true -p:IncludeSource=true -p:IncludeSymbols=true -p:NuspecFile=${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec
+      - name: Test
+        run: dotnet test -c Release Samples/${{ env.TEST_PROJECT_NAME }}       
       - name: Extract Build Variables
         id: build-vars
         uses: ./.github/actions/set-build-variables
-      - name: Test
-        run: dotnet test -c Release Samples/${{ env.TEST_PROJECT_NAME }}       
-      - name: Pack
-        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.last_tagged_version }}-${{ env.branch_name }}-${{ env.GITHUB_RUN_NUMBER }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
+      - name: Prepare Release version
+        id: prepare-release
+        if: success() && steps.build-vars.outputs.last-tagged-version
+        uses: ./.github/actions/prepare-release
+        with:
+          last-tagged-version: ${{ steps.build-vars.outputs.last-tagged-version }}
+          pr-title: ${{ steps.build-vars.outputs.branch-name }}
+          pr-body: ${{ steps.build-vars.outputs.branch-name }}      
+      - name: Pack branch preview
+        if: github.event_name == 'push' && github.ref != 'refs/heads/master'
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.latest_version }}-${{ env.branch_name }}-${{ github.GITHUB_RUN_ATTEMPT }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
         env:
-          last_tagged_version: ${{ steps.build-vars.outputs.last-tagged-version }}
+          latest_version: ${{ steps.build-vars.outputs.last-tagged-version }}
           branch_name: ${{ steps.build-vars.outputs.branch-name }}
+      - name: Pack master deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.latest_version }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
+        env:
+          latest_version: ${{ steps.prepare-release.outputs.new-version }}
+      - name: Create a GitHub Release
+        id: create_release
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master' && steps.prepare-release.outputs.tag-name 
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.prepare-release.outputs.tag-name }}
+          release_name: ${{ steps.prepare-release.outputs.new-version }}
+          prerelease: false
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
@@ -77,46 +99,20 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ env.NUGET_PREVIEW_FEED_PUBLISH_KEY }}
       - name: Publish the package to Nuget preview feed
         run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_PREVIEW_FEED }} --api-key AzureArtifact --skip-duplicate
-  deploy:
+  master_deploy:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: windows-2019
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Download Artifact
+        uses: actions/download-artifact@v1
         with:
-          fetch-depth: 0
-      - name: Extract pull request details
-        id: pr
-        uses: 8BitJonny/gh-get-current-pr@1.2.0
+          name: nupkg
+      - name: Setup publish token  
+        uses: actions/setup-dotnet@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          sha: ${{ github.sha }}
-          filterOutClosed: false
-      - name: Extract Build Variables
-        id: build-vars
-        uses: ./.github/actions/set-build-variables
-      - name: Prepare Release
-        id: prepare-release
-        if: success() && steps.pr.outputs.number
-        uses: ./.github/actions/prepare-release
-        with:
-          last-tagged-version: ${{ steps.build-vars.outputs.last-tagged-version }}
-          pr-title: ${{ steps.pr.outputs.pr_title }}
-          pr-body: ${{ steps.pr.outputs.pr_body }}
-      - name: Create a GitHub Release
-        id: create_release
-        if: success() && steps.prepare-release.outputs.tag-name 
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ steps.prepare-release.outputs.tag-name }}
-          release_name: ${{ steps.prepare-release.outputs.new-version }}
-          prerelease: false
-      - name: Create Release NuGet package
-        if: success() && steps.prepare-release.outputs.new-version
-        run: nuget pack "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.nuspec" -Version "${{ env.new_version }}" -OutputDirectory "./${{ env.PROJECT_NAME }}/bin/Release" -Symbols
+          source-url: ${{ env.NUGET_FEED }}
         env:
-          new_version: ${{ steps.prepare-release.outputs.new-version }}
-      - name: Publish the package to Nuget feed
-        if: success() && steps.prepare-release.outputs.new-version
-        run: nuget push ${{ env.PROJECT_NAME }}/bin/Release/*.nupkg --source ${{ env.NUGET_FEED }} --skip-duplicate --api-key ${{ env.NUGET_KEY }} 
+          NUGET_AUTH_TOKEN: ${{ env.NUGET_KEY }}
+      - name: Publish the package to Nuget preview feed
+        run: nuget push ${{ env.PROJECT_NAME }}/bin/Release/*.nupkg --source ${{ env.NUGET_FEED }} --skip-duplicate --api-key ${{ env.NUGET_KEY }}       
