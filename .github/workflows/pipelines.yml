@@ -78,7 +78,7 @@ jobs:
           release_name: ${{ steps.prepare-release.outputs.new-version }}
           prerelease: false
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: nupkg
           path: ./${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
@@ -88,31 +88,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: nupkg
       - name: Setup publish token  
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           source-url: ${{ env.NUGET_PREVIEW_FEED }}
         env:
           NUGET_AUTH_TOKEN: ${{ env.NUGET_PREVIEW_FEED_PUBLISH_KEY }}
       - name: Publish the package to Nuget preview feed
-        run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_PREVIEW_FEED }} --api-key AzureArtifact --skip-duplicate
+        run: dotnet nuget push ./**/*.nupkg --source ${{ env.NUGET_PREVIEW_FEED }} --api-key AzureArtifact --skip-duplicate
   master_deploy:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: nupkg
       - name: Setup publish token  
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           source-url: ${{ env.NUGET_FEED }}
         env:
           NUGET_AUTH_TOKEN: ${{ env.NUGET_KEY }}
       - name: Publish the package to Nuget feed
-        run: dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_FEED }} --api-key ${{ env.NUGET_KEY }} --skip-duplicate       
+        run: dotnet nuget push ./**/*.nupkg --source ${{ env.NUGET_FEED }} --api-key ${{ env.NUGET_KEY }} --skip-duplicate       
