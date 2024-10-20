@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using Microsoft.Owin.Hosting;
 using Newtonsoft.Json.Linq;
 using Owin;
 using PactNet;
 using PactNet.Infrastructure.Outputters;
+using PactNet.Verifier;
 using RestSharp;
 using RestSharp.Authenticators;
 
@@ -28,7 +31,7 @@ namespace Aqovia.PactProducerVerifier
         private readonly Action<IAppBuilder> _onWebAppStarting;
         private readonly int _maxBranchNameLength;
         private readonly AppDomainHelper _appDomainHelper;
-
+        public HttpClient CurrentHttpClient;
         public PactProducerTests(ProducerVerifierConfiguration configuration, Action<string> output, string gitBranchName, Action<IAppBuilder> onWebAppStarting = null, int maxBranchNameLength = int.MaxValue)
         {
             _output = new ActionOutput(output);
@@ -47,7 +50,7 @@ namespace Aqovia.PactProducerVerifier
                 throw new ArgumentException($"App setting '{nameof(configuration.PactBrokerUri)}' is missing or not set");
             }
 
-            _pactBrokerRestClient = SetupRestClient();
+            CurrentHttpClient = new HttpClient();
             var path = AppDomain.CurrentDomain.BaseDirectory;
 
             Assembly webAssembly;
@@ -81,6 +84,7 @@ namespace Aqovia.PactProducerVerifier
 
         public void EnsureApiHonoursPactWithConsumers()
         {
+            SetupRestClient();
             const int maxRetries = 5;
             var random = new Random();
             var uriBuilder = new UriBuilder(BaseServiceUri);
@@ -136,7 +140,7 @@ namespace Aqovia.PactProducerVerifier
             return $"pacts/provider/{_configuration.ProviderName}/consumer/{consumer}/latest/{branchName}";
         }
 
-        private IEnumerable<JToken> GetConsumers(IRestClient client)
+        private IEnumerable<JToken> GetConsumers(RestClient client)
         {
             IEnumerable<JToken> consumers = new List<JToken>();
             var restRequest = new RestRequest($"pacts/provider/{_configuration.ProviderName}/latest");
@@ -149,29 +153,26 @@ namespace Aqovia.PactProducerVerifier
                 consumers = latestPacts.Select(s => s.SelectToken("name"));
             }
             return consumers;
+        } 
+        
+        private void SetupRestClient()
+        {
+            CurrentHttpClient.BaseAddress = new Uri(_configuration.PactBrokerUri);
+            CurrentHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer ", _configuration.PactBrokerToken);
         }
 
-        private RestClient SetupRestClient()
-        {
-            var client = new RestClient
-            {
-                Authenticator = new HttpBasicAuthenticator(_configuration.PactBrokerUsername, _configuration.PactBrokerPassword),
-                BaseUrl = new Uri(_configuration.PactBrokerUri),
-            };
-            return client;
-        }
         private string GetCurrentBranchName()
         {
             var componentBranch = Environment.GetEnvironmentVariable("ComponentBranch");
 
             _output.WriteLine($"GitBranchName = {_gitBranchName}");
             _output.WriteLine($"Environment Variable 'ComponentBranch' = {componentBranch}");
-            
+
             var branchName = _gitBranchName;
             branchName = string.IsNullOrEmpty(componentBranch) ? branchName : componentBranch;
             branchName = string.IsNullOrEmpty(branchName) ? MasterBranchName : branchName;
 
-            branchName = branchName?.TrimStart('-').Length > _maxBranchNameLength ? 
+            branchName = branchName?.TrimStart('-').Length > _maxBranchNameLength ?
                  branchName.TrimStart('-').Substring(0, _maxBranchNameLength)
                 : branchName.TrimStart('-');
 
@@ -186,24 +187,21 @@ namespace Aqovia.PactProducerVerifier
 
             var config = new PactVerifierConfig
             {
-                Outputters = new List<IOutput> 
+                
+                Outputters = new List<IOutput>
                 {
                     _output
                 }
             };
 
-            PactUriOptions pactUriOptions = null;
-            if (!string.IsNullOrEmpty(_configuration.PactBrokerUsername))
-                pactUriOptions = new PactUriOptions(_configuration.PactBrokerUsername, _configuration.PactBrokerPassword);
-
             var pactUri = new Uri(new Uri(_configuration.PactBrokerUri), pactUrl);
-            var pactVerifier = new PactVerifier(config);
+            IPactVerifier pactVerifier = new PactVerifier(_configuration.ProviderName, config);
 
             pactVerifier
-                .ProviderState($"{serviceUri}/provider-states")
-                .ServiceProvider(_configuration.ProviderName, serviceUri)
-                .HonoursPactWith(consumer.ToString())
-                .PactUri(pactUri.AbsoluteUri, pactUriOptions)
+                .WithHttpEndpoint(new Uri(serviceUri))
+                .WithFileSource(new FileInfo(""))
+                .WithCustomHeader("Authorization", $"Bearer {_configuration.PactBrokerToken}")
+                .WithProviderStateUrl(new Uri($"{serviceUri}/provider-states"))
                 .Verify();
         }
         private class ActionOutput : IOutput

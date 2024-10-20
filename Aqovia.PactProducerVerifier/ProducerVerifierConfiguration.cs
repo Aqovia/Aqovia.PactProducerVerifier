@@ -10,8 +10,7 @@ namespace Aqovia.PactProducerVerifier
     {
         public string ProviderName { get; set; }
         public string ProjectName { get; set; }
-        public string PactBrokerUsername { get; set; }
-        public string PactBrokerPassword { get; set; }
+        public string PactBrokerToken{ get; set; }
         public string PactBrokerUri { get; set; }
     }
 }

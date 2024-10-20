@@ -18,7 +18,7 @@ This uses the beta version of PactNet, and Team City.
 * Install the latest beta version 2.0.X-beta of PactNet package (use allow Pre-release option)
 * Install this package Aqovia.PactProducerVerifier
 * Install a test framework such as XUnit
-* Install GitInfo if you require to work out the git branch name locally 
+* Install GitInfo if you require to work out the git branch name locally
 
 * Add the test (example using XUnit)
 ```
@@ -27,19 +27,18 @@ This uses the beta version of PactNet, and Team City.
         private readonly Aqovia.PactProducerVerifier.PactProducerTests _pactProducerTests;
         private const int TeamCityMaxBranchLength = 19;
         public PactProducerTests(ITestOutputHelper output)
-        {            
+        {
 			var configuration = new ProducerVerifierConfiguration
             {
                 ProviderName = "<YOUR NAME OF THE PROVIDER (E.G THE PROJECT NAME)",
                 PactBrokerUri = "<YOUR PACT BROKER URL>",
-				PactBrokerUsername = "<YOUR PACT BROKER USERNAME OR NULL>" ,
-                PactBrokerPassword = "<YOUR PACT BROKER PASSWORD OR NULL>",                
+				PactBrokerToken = "<YOUR PACT BROKER TOKEN , mandatory>",
                 ProjectName = "WEB API PROJECT YOU ARE TESTING (IF DOESN'T END IN Web.dll)')"
             };
 
 			 _pactProducerTests = new PactProducerTests(configuration, output.WriteLine, ThisAssembly.Git.Branch, null, TeamCityMaxBranchLength);
 
-			 // Or if you have given statements, set up state in the provider to match the given statements 
+			 // Or if you have given statements, set up state in the provider to match the given statements
 
 			 _pactProducerTests = new PactProducerTests(configuration, output.WriteLine, ThisAssembly.Git.Branch, builder =>
             {
@@ -74,4 +73,3 @@ The PactProducerTests constructor takes in 3 parameters:
 A sample is included in the source - in the samples folder. To use this:
 * Update the PactBrokerUri configuration setting to the uri of the broker your using.
 * Remove the Skip parameter in the [Fact] attribute
-

@@ -16,8 +16,7 @@ namespace Aqovia.PactProducerVerifier.Sample
                 ProviderName = ConfigurationManager.AppSettings["ProviderName"],
                 ProjectName = ConfigurationManager.AppSettings["ProjectName"],
                 PactBrokerUri = ConfigurationManager.AppSettings["PactBrokerUri"],
-                PactBrokerUsername = ConfigurationManager.AppSettings["PactBrokerUsername"],
-                PactBrokerPassword = ConfigurationManager.AppSettings["PactBrokerPassword"],
+                PactBrokerToken = ConfigurationManager.AppSettings["PactBrokerToken"]
             };
             _pactProducerTests = new Aqovia.PactProducerVerifier.PactProducerTests(configuration, output.WriteLine, ThisAssembly.Git.Branch, null, maxBranchNameLength);
         }
