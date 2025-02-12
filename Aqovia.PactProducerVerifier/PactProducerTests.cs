@@ -158,7 +158,7 @@ namespace Aqovia.PactProducerVerifier
         private void SetupRestClient()
         {
             CurrentHttpClient.BaseAddress = new Uri(_configuration.PactBrokerUri);
-            CurrentHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue( _configuration.PactBrokerToken);
+            CurrentHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",  _configuration.PactBrokerToken);
         }
 
         private string GetCurrentBranchName()
