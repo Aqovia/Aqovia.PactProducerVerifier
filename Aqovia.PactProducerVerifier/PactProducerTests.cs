@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using Aqovia.PactProducerVerifier.Api;
 using Microsoft.Owin.Hosting;
 using Newtonsoft.Json.Linq;
 using Owin;
@@ -158,7 +159,7 @@ namespace Aqovia.PactProducerVerifier
         private void SetupRestClient()
         {
             CurrentHttpClient.BaseAddress = new Uri(_configuration.PactBrokerUri);
-            CurrentHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer ", _configuration.PactBrokerToken);
+            CurrentHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue( _configuration.PactBrokerToken);
         }
 
         private string GetCurrentBranchName()
@@ -199,8 +200,10 @@ namespace Aqovia.PactProducerVerifier
 
             pactVerifier
                 .WithHttpEndpoint(new Uri(serviceUri))
-                .WithFileSource(new FileInfo(""))
-                .WithCustomHeader("Authorization", $"Bearer {_configuration.PactBrokerToken}")
+                .WithPactBrokerSource(pactUri, options =>
+                {
+                    options.TokenAuthentication(_configuration.PactBrokerToken);
+                })
                 .WithProviderStateUrl(new Uri($"{serviceUri}/provider-states"))
                 .Verify();
         }
