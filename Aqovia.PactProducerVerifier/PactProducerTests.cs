@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
-using Aqovia.PactProducerVerifier.Api;
 using Microsoft.Owin.Hosting;
 using Newtonsoft.Json.Linq;
 using Owin;
