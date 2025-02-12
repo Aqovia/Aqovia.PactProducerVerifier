@@ -8,7 +8,7 @@ inputs:
     required: true
   pr-title:
     description: 'pull request title'
-    required: true  
+    required: true
   pr-body:
     description: 'pull request body'
     required: true
