@@ -9,20 +9,16 @@ using System.Reflection;
 using Microsoft.Owin.Hosting;
 using Newtonsoft.Json.Linq;
 using Owin;
-using PactNet;
 using PactNet.Infrastructure.Outputters;
 using PactNet.Verifier;
-using RestSharp;
-using RestSharp.Authenticators;
 
 namespace Aqovia.PactProducerVerifier
 {
-    public class PactProducerTests
+    public class PactProducerTests : IDisposable
     {
         private const string MasterBranchName = "master";
         private const string BaseServiceUri = "http://localhost";
 
-        private readonly RestClient _pactBrokerRestClient;
         private readonly object _startup;
         private readonly MethodInfo _method;
         private readonly ActionOutput _output;
@@ -31,7 +27,8 @@ namespace Aqovia.PactProducerVerifier
         private readonly Action<IAppBuilder> _onWebAppStarting;
         private readonly int _maxBranchNameLength;
         private readonly AppDomainHelper _appDomainHelper;
-        public HttpClient CurrentHttpClient;
+        private readonly HttpClient _httpClient;
+        
         public PactProducerTests(ProducerVerifierConfiguration configuration, Action<string> output, string gitBranchName, Action<IAppBuilder> onWebAppStarting = null, int maxBranchNameLength = int.MaxValue)
         {
             _output = new ActionOutput(output);
@@ -50,7 +47,7 @@ namespace Aqovia.PactProducerVerifier
                 throw new ArgumentException($"App setting '{nameof(configuration.PactBrokerUri)}' is missing or not set");
             }
 
-            CurrentHttpClient = new HttpClient();
+            _httpClient = new HttpClient();
             var path = AppDomain.CurrentDomain.BaseDirectory;
 
             Assembly webAssembly;
@@ -71,7 +68,7 @@ namespace Aqovia.PactProducerVerifier
             Type type;
             try
             {
-                type = webAssembly.GetTypes().Single(_ => _.Name == "Startup");
+                type = webAssembly.GetTypes().Single(t => t.Name == "Startup");
             }
             catch (Exception e)
             {
@@ -99,7 +96,7 @@ namespace Aqovia.PactProducerVerifier
                 catch (HttpListenerException ex)
                 {
                     _output.WriteLine($"Service Uri: {uriBuilder.Uri.AbsoluteUri} failed with: {ex.Message}");
-                    if(i < maxRetries)
+                    if(i+1 < maxRetries)
                         _output.WriteLine("will retry ...");
                 }
             }
@@ -116,21 +113,21 @@ namespace Aqovia.PactProducerVerifier
                 _method.Invoke(_startup, new List<object> { builder }.ToArray());
             }))
             {
-                var consumers = GetConsumers(_pactBrokerRestClient);
+                var consumers = GetConsumers();
                 var currentBranchName = GetCurrentBranchName();
                 foreach (var consumer in consumers)
                 {
                     var pactUrl = GetPactUrl(consumer, currentBranchName);
-                    var pact = _pactBrokerRestClient.Execute(new RestRequest(pactUrl));
+                    var pact = _httpClient.GetAsync(pactUrl).GetAwaiter().GetResult();
                     if (pact.StatusCode != HttpStatusCode.OK)
                     {
                         _output.WriteLine($"Pact does not exist for branch: {currentBranchName}, using {MasterBranchName} instead");
                         pactUrl = GetPactUrl(consumer, MasterBranchName);
-                        pact = _pactBrokerRestClient.Execute(new RestRequest(pactUrl));
+                        pact = _httpClient.GetAsync(pactUrl).GetAwaiter().GetResult();
                         if (pact.StatusCode != HttpStatusCode.OK)
                             continue;
                     }
-                    VerifyPactWithConsumer(consumer, pactUrl, uri.AbsoluteUri);
+                    VerifyPactWithConsumer(pactUrl, uri.AbsoluteUri);
                 }
             }
         }
@@ -140,25 +137,24 @@ namespace Aqovia.PactProducerVerifier
             return $"pacts/provider/{_configuration.ProviderName}/consumer/{consumer}/latest/{branchName}";
         }
 
-        private IEnumerable<JToken> GetConsumers(RestClient client)
+        private IEnumerable<JToken> GetConsumers()
         {
-            IEnumerable<JToken> consumers = new List<JToken>();
-            var restRequest = new RestRequest($"pacts/provider/{_configuration.ProviderName}/latest");
-            restRequest.AddHeader("Accept", "");
-            var response = client.Execute(restRequest);
-            if (response.StatusCode == HttpStatusCode.OK)
+            var response = _httpClient.GetAsync($"pacts/provider/{_configuration.ProviderName}/latest").GetAwaiter().GetResult();
+            if (response.StatusCode != HttpStatusCode.OK)
             {
-                dynamic json = JObject.Parse(client.Execute(restRequest).Content);
-                var latestPacts = (JArray)json._links.pacts;
-                consumers = latestPacts.Select(s => s.SelectToken("name"));
+                _output.WriteLine($"Failed to get consumers from Pact Broker. Status code: {response.StatusCode}");
+                return Enumerable.Empty<JToken>();
             }
-            return consumers;
+            
+            dynamic json = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
+            var latestPacts = (JArray)json._links.pacts;
+            return latestPacts.Select(s => s.SelectToken("name"));
         } 
         
         private void SetupRestClient()
         {
-            CurrentHttpClient.BaseAddress = new Uri(_configuration.PactBrokerUri);
-            CurrentHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",  _configuration.PactBrokerToken);
+            _httpClient.BaseAddress = new Uri(_configuration.PactBrokerUri);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",  _configuration.PactBrokerToken);
         }
 
         private string GetCurrentBranchName()
@@ -172,7 +168,7 @@ namespace Aqovia.PactProducerVerifier
             branchName = string.IsNullOrEmpty(componentBranch) ? branchName : componentBranch;
             branchName = string.IsNullOrEmpty(branchName) ? MasterBranchName : branchName;
 
-            branchName = branchName?.TrimStart('-').Length > _maxBranchNameLength ?
+            branchName = branchName.TrimStart('-').Length > _maxBranchNameLength ?
                  branchName.TrimStart('-').Substring(0, _maxBranchNameLength)
                 : branchName.TrimStart('-');
 
@@ -181,10 +177,9 @@ namespace Aqovia.PactProducerVerifier
             return branchName;
         }
 
-        private void VerifyPactWithConsumer(JToken consumer, string pactUrl, string serviceUri)
+        private void VerifyPactWithConsumer(string pactUrl, string serviceUri)
         {
             //we need to instantiate one pact verifier for each consumer
-
             var config = new PactVerifierConfig
             {
                 
@@ -219,6 +214,12 @@ namespace Aqovia.PactProducerVerifier
             {
                 _output.Invoke(line);
             }
+        }
+
+        public void Dispose()
+        {
+            _appDomainHelper?.Dispose();
+            _httpClient?.Dispose();
         }
     }
 
