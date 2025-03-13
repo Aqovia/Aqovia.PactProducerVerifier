@@ -2,8 +2,7 @@
 <configuration xmlns:xdt="http://schemas.microsoft.com/XML-Document-Transform">
     <appSettings>
       <add key="PactBrokerUri" xdt:Transform="Remove" xdt:Locator="Match(key)"/>
-      <add key="PactBrokerUsername" xdt:Transform="Remove" xdt:Locator="Match(key)"/>
-      <add key="PactBrokerPassword" xdt:Transform="Remove" xdt:Locator="Match(key)"/>
+      <add key="PactBrokerToken" xdt:Transform="Remove" xdt:Locator="Match(key)"/>
       <add key="TeamCityProjectName" xdt:Transform="Remove" xdt:Locator="Match(key)"/>
     </appSettings>
 </configuration>
