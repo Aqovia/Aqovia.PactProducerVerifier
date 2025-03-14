@@ -188,7 +188,7 @@ namespace Aqovia.PactProducerVerifier
                 {
                     options.TokenAuthentication(_configuration.PactBrokerToken);
                 })
-                .WithProviderStateUrl(new Uri($"{serviceUri}/provider-states")) // might need to remove this
+                .WithProviderStateUrl(new Uri($"{serviceUri}/provider-states"))
                 .Verify();
         }
         private class ActionOutput : IOutput
