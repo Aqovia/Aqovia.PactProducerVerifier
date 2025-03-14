@@ -113,33 +113,25 @@ namespace Aqovia.PactProducerVerifier
                 _method.Invoke(_startup, new List<object> { builder }.ToArray());
             }))
             {
-                var consumers = GetConsumers();
                 var currentBranchName = GetCurrentBranchName();
-                foreach (var consumer in consumers)
+                var branchPacts = GetConsumers(currentBranchName);
+                var masterPacts = GetConsumers(MasterBranchName);
+
+                var pacts = branchPacts.Concat(masterPacts)
+                    .GroupBy(p => p.SelectToken("name").Value<string>())
+                    .Select(g => g.First())
+                    .ToList();
+
+                foreach (var pact in pacts)
                 {
-                    var pactUrl = GetPactUrl(consumer, currentBranchName);
-                    var pact = _httpClient.GetAsync(pactUrl).GetAwaiter().GetResult();
-                    if (pact.StatusCode != HttpStatusCode.OK)
-                    {
-                        _output.WriteLine($"Pact does not exist for branch: {currentBranchName}, using {MasterBranchName} instead");
-                        pactUrl = GetPactUrl(consumer, MasterBranchName);
-                        pact = _httpClient.GetAsync(pactUrl).GetAwaiter().GetResult();
-                        if (pact.StatusCode != HttpStatusCode.OK)
-                            continue;
-                    }
-                    VerifyPactWithConsumer(pactUrl, uri.AbsoluteUri);
+                    VerifyPactWithConsumer(pact.SelectToken("href").Value<string>(), uri.AbsoluteUri);
                 }
             }
         }
 
-        private string GetPactUrl(JToken consumer, string branchName)
+        private IEnumerable<JToken> GetConsumers(string branchName)
         {
-            return $"pacts/provider/{_configuration.ProviderName}/consumer/{consumer}/latest/{branchName}";
-        }
-
-        private IEnumerable<JToken> GetConsumers()
-        {
-            var response = _httpClient.GetAsync($"pacts/provider/{_configuration.ProviderName}/latest").GetAwaiter().GetResult();
+            var response = _httpClient.GetAsync($"pacts/provider/{_configuration.ProviderName}/latest/{branchName}").GetAwaiter().GetResult();
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 _output.WriteLine($"Failed to get consumers from Pact Broker. Status code: {response.StatusCode}");
@@ -147,8 +139,7 @@ namespace Aqovia.PactProducerVerifier
             }
             
             dynamic json = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
-            var latestPacts = (JArray)json._links.pacts;
-            return latestPacts.Select(s => s.SelectToken("name"));
+            return (JArray)json._links["pb:pacts"];
         } 
         
         private void SetupRestClient()
@@ -182,23 +173,22 @@ namespace Aqovia.PactProducerVerifier
             //we need to instantiate one pact verifier for each consumer
             var config = new PactVerifierConfig
             {
-                
                 Outputters = new List<IOutput>
                 {
                     _output
                 }
             };
 
-            var pactUri = new Uri(new Uri(_configuration.PactBrokerUri), pactUrl);
+            var pactUri = new Uri(pactUrl);
             IPactVerifier pactVerifier = new PactVerifier(_configuration.ProviderName, config);
 
             pactVerifier
                 .WithHttpEndpoint(new Uri(serviceUri))
-                .WithPactBrokerSource(pactUri, options =>
+                .WithUriSource(pactUri, options =>
                 {
                     options.TokenAuthentication(_configuration.PactBrokerToken);
                 })
-                .WithProviderStateUrl(new Uri($"{serviceUri}/provider-states"))
+                .WithProviderStateUrl(new Uri($"{serviceUri}/provider-states")) // might need to remove this
                 .Verify();
         }
         private class ActionOutput : IOutput
