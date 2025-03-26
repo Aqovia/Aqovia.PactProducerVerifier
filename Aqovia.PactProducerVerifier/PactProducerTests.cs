@@ -34,7 +34,10 @@ namespace Aqovia.PactProducerVerifier
             _output = new ActionOutput(output);
             _configuration = configuration;
             _gitBranchName = gitBranchName;
-            _onWebAppStarting = onWebAppStarting;
+            _onWebAppStarting = onWebAppStarting ?? (builder =>
+            {
+                builder.Use<DefaultProviderStateMiddleware>();
+            });
             _maxBranchNameLength = maxBranchNameLength;
 
             if (string.IsNullOrEmpty(configuration.ProviderName))
