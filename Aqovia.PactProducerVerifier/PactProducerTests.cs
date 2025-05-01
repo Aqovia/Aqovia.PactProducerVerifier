@@ -112,7 +112,6 @@ namespace Aqovia.PactProducerVerifier
             using (WebApp.Start(uri.AbsoluteUri, builder =>
             {
                 _onWebAppStarting?.Invoke(builder);
-
                 _method.Invoke(_startup, new List<object> { builder }.ToArray());
             }))
             {
@@ -124,11 +123,21 @@ namespace Aqovia.PactProducerVerifier
                     .GroupBy(p => p.SelectToken("name").Value<string>())
                     .Select(g => g.First())
                     .ToList();
-
+                
+                var exceptions = new List<Exception>();
                 foreach (var pact in pacts)
                 {
-                    VerifyPactWithConsumer(pact.SelectToken("href").Value<string>(), uri.AbsoluteUri);
+                    try
+                    {
+                        VerifyPactWithConsumer(pact.SelectToken("href").Value<string>(), uri.AbsoluteUri);
+                    }
+                    catch (Exception e)
+                    {
+                        exceptions.Add(e);
+                    }
                 }
+
+                if (exceptions.Any()) throw new AggregateException(exceptions);
             }
         }
 
