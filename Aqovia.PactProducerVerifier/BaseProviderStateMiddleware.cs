@@ -10,15 +10,6 @@ using Newtonsoft.Json;
 
 namespace Aqovia.PactProducerVerifier
 {
-    public class DefaultProviderStateMiddleware : BaseProviderStateMiddleware
-    {
-        public DefaultProviderStateMiddleware(Func<IDictionary<string, object>, Task> next) : base(next)
-        {
-        }
-
-        protected override IDictionary<string, Action> ProviderStates => new Dictionary<string, Action>();
-    }
-    
     public abstract class BaseProviderStateMiddleware
     {
         private readonly Func<IDictionary<string, object>, Task> _mNext;
