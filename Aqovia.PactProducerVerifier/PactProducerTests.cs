@@ -34,7 +34,10 @@ namespace Aqovia.PactProducerVerifier
             _output = new ActionOutput(output);
             _configuration = configuration;
             _gitBranchName = gitBranchName;
-            _onWebAppStarting = onWebAppStarting;
+            _onWebAppStarting = onWebAppStarting ?? (builder =>
+            {
+                builder.Use<DefaultProviderStateMiddleware>();
+            });
             _maxBranchNameLength = maxBranchNameLength;
 
             if (string.IsNullOrEmpty(configuration.ProviderName))
@@ -109,37 +112,39 @@ namespace Aqovia.PactProducerVerifier
             using (WebApp.Start(uri.AbsoluteUri, builder =>
             {
                 _onWebAppStarting?.Invoke(builder);
-
                 _method.Invoke(_startup, new List<object> { builder }.ToArray());
             }))
             {
-                var consumers = GetConsumers();
                 var currentBranchName = GetCurrentBranchName();
-                foreach (var consumer in consumers)
+                var branchPacts = GetConsumers(currentBranchName);
+                var masterPacts = GetConsumers(MasterBranchName);
+
+                var pacts = branchPacts.Concat(masterPacts)
+                    .GroupBy(p => p.SelectToken("name").Value<string>())
+                    .Select(g => g.First())
+                    .ToList();
+                
+                var exceptions = new List<Exception>();
+                foreach (var pact in pacts)
                 {
-                    var pactUrl = GetPactUrl(consumer, currentBranchName);
-                    var pact = _httpClient.GetAsync(pactUrl).GetAwaiter().GetResult();
-                    if (pact.StatusCode != HttpStatusCode.OK)
+                    
+                    try
                     {
-                        _output.WriteLine($"Pact does not exist for branch: {currentBranchName}, using {MasterBranchName} instead");
-                        pactUrl = GetPactUrl(consumer, MasterBranchName);
-                        pact = _httpClient.GetAsync(pactUrl).GetAwaiter().GetResult();
-                        if (pact.StatusCode != HttpStatusCode.OK)
-                            continue;
+                        VerifyPactWithConsumer(pact.SelectToken("href").Value<string>(), uri.AbsoluteUri);
                     }
-                    VerifyPactWithConsumer(pactUrl, uri.AbsoluteUri);
+                    catch (Exception e)
+                    {
+                        exceptions.Add(e);
+                    }
                 }
+
+                if (exceptions.Any()) throw new AggregateException(exceptions);
             }
         }
 
-        private string GetPactUrl(JToken consumer, string branchName)
+        private IEnumerable<JToken> GetConsumers(string branchName)
         {
-            return $"pacts/provider/{_configuration.ProviderName}/consumer/{consumer}/latest/{branchName}";
-        }
-
-        private IEnumerable<JToken> GetConsumers()
-        {
-            var response = _httpClient.GetAsync($"pacts/provider/{_configuration.ProviderName}/latest").GetAwaiter().GetResult();
+            var response = _httpClient.GetAsync($"pacts/provider/{_configuration.ProviderName}/latest/{branchName}").GetAwaiter().GetResult();
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 _output.WriteLine($"Failed to get consumers from Pact Broker. Status code: {response.StatusCode}");
@@ -147,8 +152,7 @@ namespace Aqovia.PactProducerVerifier
             }
             
             dynamic json = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
-            var latestPacts = (JArray)json._links.pacts;
-            return latestPacts.Select(s => s.SelectToken("name"));
+            return (JArray)json._links["pb:pacts"];
         } 
         
         private void SetupRestClient()
@@ -189,12 +193,12 @@ namespace Aqovia.PactProducerVerifier
                 }
             };
 
-            var pactUri = new Uri(new Uri(_configuration.PactBrokerUri), pactUrl);
+            var pactUri = new Uri(pactUrl);
             IPactVerifier pactVerifier = new PactVerifier(_configuration.ProviderName, config);
 
             pactVerifier
                 .WithHttpEndpoint(new Uri(serviceUri))
-                .WithPactBrokerSource(pactUri, options =>
+                .WithUriSource(pactUri, options =>
                 {
                     options.TokenAuthentication(_configuration.PactBrokerToken);
                 })
