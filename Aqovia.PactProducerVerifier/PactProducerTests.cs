@@ -127,7 +127,6 @@ namespace Aqovia.PactProducerVerifier
                 var exceptions = new List<Exception>();
                 foreach (var pact in pacts)
                 {
-                    
                     try
                     {
                         VerifyPactWithConsumer(pact.SelectToken("href").Value<string>(), uri.AbsoluteUri);
@@ -186,7 +185,6 @@ namespace Aqovia.PactProducerVerifier
             //we need to instantiate one pact verifier for each consumer
             var config = new PactVerifierConfig
             {
-                
                 Outputters = new List<IOutput>
                 {
                     _output
