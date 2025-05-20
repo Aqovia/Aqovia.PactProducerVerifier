@@ -29,6 +29,9 @@ env:
   NUGET_FEED: https://api.nuget.org/v3/index.json
   NUGET_KEY: ${{ secrets.NUGET_ORG_PUBLISH_API_KEY }}
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-2019
