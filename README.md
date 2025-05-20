@@ -75,6 +75,7 @@ A sample is included in the source - in the samples folder. To use this:
 * Remove the Skip parameter in the [Fact] attribute
 
 
+
 ## Upgrading from 1.x
 
 As of version 2.x this library upgrades PactNet from version 2.x to 5.x. This is a breaking change as there are significant syntax changes between version 2 and 5, please see the PactNet documentation for [upgrading from < 3 to version 4](https://github.com/pact-foundation/pact-net/blob/master/docs/upgrading-to-4.md) and [upgrading from 4 to 5](https://github.com/pact-foundation/pact-net/blob/master/docs/upgrading-to-5.md) for guidance.
