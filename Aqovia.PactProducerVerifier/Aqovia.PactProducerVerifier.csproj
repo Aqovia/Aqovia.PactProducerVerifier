@@ -107,6 +107,7 @@
   <ItemGroup>
     <Compile Include="AppDomainHelper.cs" />
     <Compile Include="BaseProviderStateMiddleware.cs" />
+    <Compile Include="DefaultProviderStateMiddleware.cs" />
     <Compile Include="PactProducerTests.cs" />
     <Compile Include="ProducerVerifierConfiguration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
