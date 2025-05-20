@@ -15,7 +15,7 @@ Build server is TeamCity, as it uses the environment variable "ComponentBranch" 
 
 This uses the beta version of PactNet, and Team City.
 
-* Install the latest beta version 2.0.X-beta of PactNet package (use allow Pre-release option)
+* Install the latest beta version of the [PactNet](https://github.com/pact-foundation/pact-net) package (at time of writing 5.0.0)
 * Install this package Aqovia.PactProducerVerifier
 * Install a test framework such as XUnit
 * Install GitInfo if you require to work out the git branch name locally
@@ -73,3 +73,9 @@ The PactProducerTests constructor takes in 3 parameters:
 A sample is included in the source - in the samples folder. To use this:
 * Update the PactBrokerUri configuration setting to the uri of the broker your using.
 * Remove the Skip parameter in the [Fact] attribute
+
+
+
+## Upgrading from 1.x
+
+As of version 2.x this library upgrades PactNet from version 2.x to 5.x. This is a breaking change as there are significant syntax changes between version 2 and 5, please see the PactNet documentation for [upgrading from < 3 to version 4](https://github.com/pact-foundation/pact-net/blob/master/docs/upgrading-to-4.md) and [upgrading from 4 to 5](https://github.com/pact-foundation/pact-net/blob/master/docs/upgrading-to-5.md) for guidance.
